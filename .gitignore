@@ -1,3 +1,5 @@
 tools/
 output/
+temp/
 *.pck
+*.hdiff
