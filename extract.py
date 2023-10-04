@@ -32,8 +32,8 @@ def main():
 		shutil.rmtree("output")
 
 	# Get all files to process
-	hdiff_files = [f for f in os.listdir("original") if f.endswith(".pck") and os.path.exists(f"hdiff/{f}.hdiff")]
-	alone_files = [f for f in os.listdir("original") if f.endswith(".pck") and not os.path.exists(f"hdiff/{f}.hdiff")]
+	hdiff_files = [f for f in os.listdir("audio") if f.endswith(".pck") and os.path.exists(f"patch/{f}.hdiff")]
+	alone_files = [f for f in os.listdir("audio") if f.endswith(".pck") and not os.path.exists(f"patch/{f}.hdiff")]
 	files = [*hdiff_files, *alone_files]
 	print(f"{len(files)} file(s) to extract")
 	iteration = 0
@@ -58,7 +58,7 @@ def main():
 			if os.path.exists("temp"):
 				shutil.rmtree("temp")
 			os.makedirs(path("temp"), exist_ok=True)
-			shutil.copy(f"original/{file}", f"temp/{file}")
+			shutil.copy(f"audio/{file}", f"temp/{file}")
 
 			output_path = "original_decoded"
 			if alone:
@@ -92,7 +92,7 @@ def main():
 				curr += 1
 
 				# update files
-				shutil.copy(f"hdiff/{file}.hdiff", f"temp/{file}.hdiff")
+				shutil.copy(f"patch/{file}.hdiff", f"temp/{file}.hdiff")
 				shutil.move(f"temp/{file}", f"temp/{file.split('.')[0]}.original.pck")
 
 				# prepare args
