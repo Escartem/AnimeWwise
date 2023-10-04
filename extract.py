@@ -252,8 +252,10 @@ def main():
 
 				# prepare folders 
 				os.makedirs(path(f"output/{filename}"), exist_ok=True)
-				os.makedirs(path("temp/new_files"), exist_ok=True)
-				os.makedirs(path("temp/changed_files"), exist_ok=True)
+				if len(new_files) > 0:
+					os.makedirs(path("temp/new_files"), exist_ok=True)
+				if len(changed_files) > 0:
+					os.makedirs(path("temp/changed_files"), exist_ok=True)
 
 				# split files into corresponding folder
 				for file in new_files:
@@ -264,8 +266,10 @@ def main():
 
 				# move them to output
 				final_path = f"output/{filename}"
-				shutil.move("temp/new_files", f"{final_path}/new_files")
-				shutil.move("temp/changed_files", f"{final_path}/changed_files")
+				if len(new_files) > 0:
+					shutil.move("temp/new_files", f"{final_path}/new_files")
+				if len(changed_files) > 0:
+					shutil.move("temp/changed_files", f"{final_path}/changed_files")
 
 				# cleanup
 				shutil.rmtree("temp/mp3")
