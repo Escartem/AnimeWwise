@@ -35,9 +35,14 @@ def main():
 	hdiff_files = [f for f in os.listdir("audio") if f.endswith(".pck") and os.path.exists(f"patch/{f}.hdiff")]
 	alone_files = [f for f in os.listdir("audio") if f.endswith(".pck") and not os.path.exists(f"patch/{f}.hdiff")]
 	files = [*hdiff_files, *alone_files]
+	
+	if len(files) == 0:
+		print("No files found !")
+		return
+
 	print(f"{len(files)} file(s) to extract")
 	iteration = 0
-	
+
 	for file in files:
 		try:
 			iteration += 1
@@ -277,7 +282,8 @@ def main():
 			print(e)
 
 	# all files processed
-	shutil.rmtree("temp")
+	if os.path.exists("temp"):
+		shutil.rmtree("temp")
 	print("Done extracting everything !")
 
 if __name__ == "__main__":
