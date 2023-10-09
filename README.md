@@ -8,6 +8,7 @@ Extract audio from .pck and .hdiff to mp3 with this tool. It can in theory extra
 > ℹ️ The zip file will be automatically extracted on first launch, it just needs to be here
 > 
 > ⚠️ Make sure to always use the latest tools and the latest project version to prevent errors
+> 
 > ⚠️ Your browser may flag the zip file as malicious, I don't have a solution right now, just ignore the message and download it anyway
 4. Install dependencies -> `pip install -r requirements.txt`
 5. Place all of your `.pck` files in the *audio* folder and `.pck.hdiff` in the *patch* folder
