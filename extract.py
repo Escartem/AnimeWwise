@@ -13,18 +13,6 @@ call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subp
 spinner = Halo(text="spinner", spinner={'interval': 100, 'frames': ['◜', '◠', '◝', '◞', '◡', '◟']}, placement="right")
 
 def main():
-	# Extract tools on first launch
-	if not os.path.exists("tools"):
-		if not os.path.exists("tools.zip"):
-			print("Please place tools.zip in the project directory and run this program again, you can get the file on the project page")
-			exit()
-		spinner.text = "Extracting tools for first launch"
-		spinner.start()
-		with zipfile.ZipFile(path("tools.zip"), "r") as zip:
-			zip.extractall(cwd)
-		os.remove(path("tools.zip"))
-		spinner.stop()
-
 	# Initial cleanup
 	if os.path.exists("temp"):
 		shutil.rmtree("temp")
