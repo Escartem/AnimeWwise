@@ -13,9 +13,10 @@ Extract audio from .pck and .hdiff to mp3 with this tool. It can in theory extra
 
 ---
 
-# New features
-
-## There is a separate branch called `dev` that may includes new features, you can check it out if you want to get them early
+## ℹ️ There is a separate branch called `dev` that may includes new features, you can check it out if you want to get them early. Those features are, as of right now :
+- export files with their original names
+- more export formats support
+- reverse search ?
 
 ---
 
