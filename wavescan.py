@@ -182,9 +182,9 @@ def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_
 
 		# se file name
 		if alt_mode == 1 and is_externals == 1:
-			name = f"externals/{path}{ID1:08x}{ID2:08x}.{ext}"
+			name = f"externals/{path}{file_id_1:08x}{file_id_2:08x}.{ext}"
 		else:
-			name = f"{path}{ID}.{ext}"
+			name = f"{path}{file_id}.{ext}"
 
 		# filtering utilities
 		if filter_bnk_only == 1 and ext != "bnk":
