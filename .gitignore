@@ -3,3 +3,4 @@ temp/
 *.pck
 *.hdiff
 tools.zip
+__pycache__/

@@ -2,6 +2,7 @@ import os
 import shutil
 import zipfile
 import filecmp
+import wavescan
 import subprocess
 from halo import Halo
 from progress.bar import PixelBar
@@ -60,20 +61,10 @@ def main():
 			if alone:
 				output_path = "wem"
 
-			# prepare args
-			args = [
-				path("tools/quickbms/quickbms.exe"),
-				"-o",
-				"-Y",
-				path("tools/quickbms/wavescan.bms"),
-				path(f"temp/{file}"),
-				path(f"temp/{output_path}")
-			]
-
 			# update spinner and call program
 			spinner.text = f"[{curr}/{steps}] Extracting"
 			spinner.start()
-			call(args)
+			wavescan.extract(path(f"temp/{file}"), path(f"temp/{output_path}"))
 			spinner.stop()
 			print(f"[{curr}/{steps}] Extracting")
 
@@ -114,20 +105,10 @@ def main():
 			if not alone:
 				curr += 1
 
-				# prepare args
-				args = [
-					path("tools/quickbms/quickbms.exe"),
-					"-o",
-					"-Y",
-					path("tools/quickbms/wavescan.bms"),
-					path(f"temp/{file}"),
-					path(f"temp/patched_decoded")
-				]
-
 				# update spinner and call program
 				spinner.text = f"[{curr}/{steps}] Extracting patch"
 				spinner.start()
-				call(args)
+				wavescan.extract(path(f"temp/{file}"), path(f"temp/patched_decoded"))
 				spinner.stop()
 				print(f"[{curr}/{steps}] Extracting patch")
 

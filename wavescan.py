@@ -1,16 +1,18 @@
 # Custom rewrite of the Wwise AKPK packages extractor, original by Nicknine and bnnm
 # TODO: use extracted files id with the mapping table to restore file names
-# TODO: make this script callable by the main one
 from filereader import FileReader
 import os
 
-filename = "External0.pck"
-cwd = os.getcwd()
-reader = FileReader(open(filename, "rb"), "little") # defaults to little endian
+
+reader = None
 bank_version = 0
 
-def main():
+
+def extract(input_file, output_folder):
 	global bank_version
+	global reader
+
+	reader = FileReader(open(input_file, "rb"), "little") # defaults to little endian
 
 	# check file
 	if reader.ReadBytes(4) != b"AKPK":
@@ -50,7 +52,7 @@ def main():
 
 	# extract each sector
 	for sector in sectors:
-		extract_sector(*sector[1:], endianness, lang_array, bank_version)
+		extract_sector(*sector[1:], endianness, lang_array, bank_version, output_folder)
 
 		if sector[0] and bank_version == 0:
 			if externals_sector_size == 0:
@@ -109,7 +111,7 @@ def detect_bank_version(offset):
 
 	reader.SetBufferPos(current)
 
-def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_array, bank_version, filter_bnk_only=0, filter_wem_only=0):
+def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_array, bank_version, output_folder, filter_bnk_only=0, filter_wem_only=0):
 	# check sector validity
 	if section_size == 0:
 		return
@@ -193,20 +195,18 @@ def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_
 		if filter_wem_only == 1 and ext != "wem":
 			continue
 
-		print(f"NAME - {name} | OFFSET - {offset} | SIZE - {size}")
+		# file infos
+		# print(f"NAME - {name} | OFFSET - {offset} | SIZE - {size}")
 
 		# save file into disk
 		current = reader.GetBufferPos()
 		reader.SetBufferPos(offset)
 		file_data = reader.ReadBytes(size)
 
-		os.makedirs(os.path.join(cwd, os.path.dirname(name)), exist_ok=True)
+		os.makedirs(output_folder, exist_ok=True)
 
-		with open(os.path.join(cwd, name), "wb+") as f:
+		with open(os.path.join(output_folder, os.path.basename(name)), "wb+") as f:
 			f.write(file_data)
 			f.close()
 
 		reader.SetBufferPos(current)
-
-if __name__ == "__main__":
-	main()
