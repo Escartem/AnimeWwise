@@ -19,9 +19,13 @@ def main():
 		shutil.rmtree("temp")
 
 	if os.path.exists("output") and len(os.listdir("output")) > 0:
-		print("The output folder will be cleared when the program runs, press a key to continue or close this window")
-		os.system("pause >nul")
-		shutil.rmtree("output")
+		print("The output folder needs to be cleared, continue ? [Y/N]")
+		select = input(">")
+		if select.lower() == "y":
+			shutil.rmtree("output")
+		else:
+			print("Aborting")
+			exit()
 
 	# Get all files to process
 	hdiff_files = [f for f in os.listdir("audio") if f.endswith(".pck") and os.path.exists(f"patch/{f}.hdiff")]
