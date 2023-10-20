@@ -12,7 +12,8 @@ def extract(input_file, output_folder):
 	global bank_version
 	global reader
 
-	reader = FileReader(open(input_file, "rb"), "little") # defaults to little endian
+	file = open(input_file, "rb")
+	reader = FileReader(file, "little") # defaults to little endian
 
 	# check file
 	if reader.ReadBytes(4) != b"AKPK":
@@ -58,6 +59,9 @@ def extract(input_file, output_folder):
 			if externals_sector_size == 0:
 				print("can't detect bank version")
 			bank_version = 62
+
+	# close
+	file.close()
 
 def get_langs(langs_sector_size):
 	string_offset = reader.GetBufferPos()
