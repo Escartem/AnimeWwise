@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import zipfile
 import filecmp
@@ -7,7 +8,7 @@ import subprocess
 from halo import Halo
 from progress.bar import PixelBar
 
-# don't question how optimised this is
+
 cwd = os.getcwd()
 path = lambda path: os.path.join(cwd, path)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
@@ -259,7 +260,7 @@ def main():
 			print(f"[{curr}/{steps}] Cleaning up")
 		except Exception as e:
 			print("An error occured while processing this file ! Skipping to the next one, details of the error bellow :")
-			print(e)
+			print(f"Line {sys.exc_info()[-1].tb_lineno}, {e}")
 
 	# all files processed
 	if os.path.exists("temp"):
