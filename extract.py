@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import shutil
 import zipfile
 import filecmp
@@ -13,10 +14,21 @@ cwd = os.getcwd()
 path = lambda path: os.path.join(cwd, path)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 spinner = Halo(text="spinner", spinner={'interval': 100, 'frames': ['◜', '◠', '◝', '◞', '◡', '◟']}, placement="right")
+skips = "000111111" # used for debugging
+
+# 1 - original extract
+# 2 - patch
+# 3 - patch extract
+# 4 - filter files
+# 5 - wem to wav
+# 6 - wav to mp3
+# 7 - map names
+# 8 - clean up
+# 9 - temp clean up
 
 def main():
 	# Initial cleanup
-	if os.path.exists("temp"):
+	if os.path.exists("temp") and skips[8] != "1":
 		shutil.rmtree("temp")
 
 	if os.path.exists("output") and len(os.listdir("output")) > 0:
@@ -48,222 +60,265 @@ def main():
 				filename = f"{file.split('.')[0]}.hdiff.pck"
 			print(f"--- {filename} ({iteration}/{len(files)}) ---")
 
-			alone, steps, curr = False, 7, 1
+			alone, steps, curr = False, 8, 1
 			if file in alone_files:
-				alone, steps = True, 4
+				alone, steps = True, 5
 
 			######################################
 			### 1 - Extract original .pck file ###
 			######################################
 
-			# update files
-			if os.path.exists("temp"):
-				shutil.rmtree("temp")
-			os.makedirs(path("temp"), exist_ok=True)
-			shutil.copy(f"audio/{file}", f"temp/{file}")
+			if skips[0] != "1":
+				# update files
+				if os.path.exists("temp"):
+					shutil.rmtree("temp")
+				os.makedirs(path("temp"), exist_ok=True)
+				shutil.copy(f"audio/{file}", f"temp/{file}")
 
-			output_path = "original_decoded"
-			if alone:
-				output_path = "wem"
+				output_path = "original_decoded"
+				if alone:
+					output_path = "wem"
 
-			# update spinner and call program
-			spinner.text = f"[{curr}/{steps}] Extracting"
-			spinner.start()
-			wavescan.extract(path(f"temp/{file}"), path(f"temp/{output_path}"))
-			spinner.stop()
-			print(f"[{curr}/{steps}] Extracting")
+				# update spinner and call program
+				spinner.text = f"[{curr}/{steps}] Extracting"
+				spinner.start()
+				wavescan.extract(path(f"temp/{file}"), path(f"temp/{output_path}"))
+				spinner.stop()
+				print(f"[{curr}/{steps}] Extracting")
 
-			if alone:
-				all_files = os.listdir(path("temp/wem"))
+				if alone:
+					all_files = os.listdir(path("temp/wem"))
 
 			######################################
 			### 2 - Patch the .pck with .hdiff ###
 			######################################
 
-			if not alone:
-				curr += 1
+			if skips[1] != "1":
+				if not alone:
+					curr += 1
 
-				# update files
-				shutil.copy(f"patch/{file}.hdiff", f"temp/{file}.hdiff")
-				shutil.move(f"temp/{file}", f"temp/{file.split('.')[0]}.original.pck")
+					# update files
+					shutil.copy(f"patch/{file}.hdiff", f"temp/{file}.hdiff")
+					shutil.move(f"temp/{file}", f"temp/{file.split('.')[0]}.original.pck")
 
-				# prepare args
-				args = [
-					path("tools/hpatchz/hpatchz.exe"),
-					"-f",
-					path(f"temp/{file.split('.')[0]}.original.pck"),
-					path(f"temp/{file}.hdiff"),
-					path(f"temp/{file}")
-				]
+					# prepare args
+					args = [
+						path("tools/hpatchz/hpatchz.exe"),
+						"-f",
+						path(f"temp/{file.split('.')[0]}.original.pck"),
+						path(f"temp/{file}.hdiff"),
+						path(f"temp/{file}")
+					]
 
-				# update spinner and call program
-				spinner.text = f"[{curr}/{steps}] Patching"
-				spinner.start()
-				call(args)
-				spinner.stop()
-				print(f"[{curr}/{steps}] Patching")
+					# update spinner and call program
+					spinner.text = f"[{curr}/{steps}] Patching"
+					spinner.start()
+					call(args)
+					spinner.stop()
+					print(f"[{curr}/{steps}] Patching")
 
 			#####################################
 			### 3 - Extract patched .pck file ###
 			#####################################
 
-			if not alone:
-				curr += 1
+			if skips[2] != "1":
+				if not alone:
+					curr += 1
 
-				# update spinner and call program
-				spinner.text = f"[{curr}/{steps}] Extracting patch"
-				spinner.start()
-				wavescan.extract(path(f"temp/{file}"), path(f"temp/patched_decoded"))
-				spinner.stop()
-				print(f"[{curr}/{steps}] Extracting patch")
+					# update spinner and call program
+					spinner.text = f"[{curr}/{steps}] Extracting patch"
+					spinner.start()
+					wavescan.extract(path(f"temp/{file}"), path(f"temp/patched_decoded"))
+					spinner.stop()
+					print(f"[{curr}/{steps}] Extracting patch")
 
-				# cleanup useless files to save storage
-				os.remove(f"temp/{file}")
-				os.remove(f"temp/{file}.hdiff")
-				os.remove(f"temp/{file.split('.')[0]}.original.pck")
+					# cleanup useless files to save storage
+					os.remove(f"temp/{file}")
+					os.remove(f"temp/{file}.hdiff")
+					os.remove(f"temp/{file.split('.')[0]}.original.pck")
 
 			####################################
 			### 4 - Search new/changed files ###
 			####################################
 
-			if not alone:
-				curr += 1
+			if skips[3] != "1":
+				if not alone:
+					curr += 1
 
-				# update spinner
-				spinner.text = f"[{curr}/{steps}] Filtering files"
-				spinner.start()
+					# update spinner
+					spinner.text = f"[{curr}/{steps}] Filtering files"
+					spinner.start()
 
-				# compare folders
-				diff = filecmp.dircmp(path("temp/original_decoded"), path("temp/patched_decoded"))
-				new_files, changed_files = diff.right_only, diff.diff_files
-				all_files = [*new_files, *changed_files]
+					# compare folders
+					diff = filecmp.dircmp(path("temp/original_decoded"), path("temp/patched_decoded"))
+					new_files, changed_files = diff.right_only, diff.diff_files
+					all_files = [*new_files, *changed_files]
 
-				# merge files
-				os.makedirs(path("temp/wem"), exist_ok=True)
+					# merge files
+					os.makedirs(path("temp/wem"), exist_ok=True)
 
-				for file in all_files:
-					shutil.move(f"temp/patched_decoded/{file}", f"temp/wem/{file}")
+					for file in all_files:
+						shutil.move(f"temp/patched_decoded/{file}", f"temp/wem/{file}")
 
-				# cleanup useless folders to save storage
-				shutil.rmtree("temp/original_decoded")
-				shutil.rmtree("temp/patched_decoded")
+					# cleanup useless folders to save storage
+					shutil.rmtree("temp/original_decoded")
+					shutil.rmtree("temp/patched_decoded")
 
-				spinner.stop()
-				print(f"[{curr}/{steps}] Filtering files")
+					spinner.stop()
+					print(f"[{curr}/{steps}] Filtering files")
 
 			######################################
 			### 5 - Convert .wem files to .wav ###
 			######################################
 
-			curr += 1
+			if skips[4] != "1":
+				curr += 1
 
-			# updates folders and progress bar
-			os.makedirs(path("temp/wav"), exist_ok=True)
-			bar = PixelBar(f"[{curr}/{steps}] Converting to wav ", max=len(all_files), suffix='%(percent).1f%% - %(eta)ds left')
+				# updates folders and progress bar
+				os.makedirs(path("temp/wav"), exist_ok=True)
+				bar = PixelBar(f"[{curr}/{steps}] Converting to wav ", max=len(all_files), suffix='%(percent).1f%% - %(eta)ds left')
 
-			# convert each file one by one
-			for file in all_files:
-				args = [
-					path("tools/vgmstream/vgmstream-cli.exe"),
-					"-o",
-					path(f"temp/wav/{file.split('.')[0]}.wav"),
-					path(f"temp/wem/{file}")
-				]
+				# convert each file one by one
+				for file in all_files:
+					args = [
+						path("tools/vgmstream/vgmstream-cli.exe"),
+						"-o",
+						path(f"temp/wav/{file.split('.')[0]}.wav"),
+						path(f"temp/wem/{file}")
+					]
 
-				call(args)
-				bar.next()
-			bar.finish()
+					call(args)
+					bar.next()
+				bar.finish()
 
-			# cleanup
-			shutil.rmtree("temp/wem")
+				# cleanup
+				shutil.rmtree("temp/wem")
 
 			######################################
 			### 6 - Convert .wav files to .mp3 ###
 			######################################
 
-			curr += 1
+			if skips[5] != "1":
+				curr += 1
 
-			# updates folders and progress bar
-			os.makedirs(path("temp/mp3"), exist_ok=True)
-			bar = PixelBar(f"[{curr}/{steps}] Converting to mp3 ", max=len(all_files), suffix='%(percent).1f%% - %(eta)ds left')
+				# updates folders and progress bar
+				os.makedirs(path("temp/mp3"), exist_ok=True)
+				bar = PixelBar(f"[{curr}/{steps}] Converting to mp3 ", max=len(all_files), suffix='%(percent).1f%% - %(eta)ds left')
 
-			# update file list
-			all_files = [f"{f.split('.')[0]}.wav" for f in all_files]
+				# update file list
+				all_files = [f"{f.split('.')[0]}.wav" for f in all_files]
 
-			# convert each file one by one
-			for file in all_files:
-				args = [
-					path("tools/ffmpeg/ffmpeg.exe"),
-					"-i",
-					path(f"temp/wav/{file}"),
-					"-acodec",
-					"libmp3lame",
-					"-b:a",
-					"192k",
-					path(f"temp/mp3/{file.split('.')[0]}.mp3"),
-				]
+				# convert each file one by one
+				for file in all_files:
+					args = [
+						path("tools/ffmpeg/ffmpeg.exe"),
+						"-i",
+						path(f"temp/wav/{file}"),
+						"-acodec",
+						"libmp3lame",
+						"-b:a",
+						"192k",
+						path(f"temp/mp3/{file.split('.')[0]}.mp3"),
+					]
 
-				call(args)
-				bar.next()
-			bar.finish()
-
-			# cleanup
-			shutil.rmtree("temp/wav")
-
-			######################################################
-			### 7 - Clean everything and move result to output ###
-			######################################################
-
-			curr += 1
-
-			# update spinner
-			spinner.text = f"[{curr}/{steps}] Cleaning up"
-			spinner.start()
-
-			filename = filename.split('.')[0]
-
-			if not alone:
-				# update files list
-				new_files = [f"{f.split('.')[0]}.mp3" for f in new_files]
-				changed_files = [f"{f.split('.')[0]}.mp3" for f in changed_files]
-
-				# prepare folders 
-				os.makedirs(path(f"output/{filename}"), exist_ok=True)
-				if len(new_files) > 0:
-					os.makedirs(path("temp/new_files"), exist_ok=True)
-				if len(changed_files) > 0:
-					os.makedirs(path("temp/changed_files"), exist_ok=True)
-
-				# split files into corresponding folder
-				for file in new_files:
-					shutil.move(f"temp/mp3/{file}", f"temp/new_files/{file}")
-
-				for file in changed_files:
-					shutil.move(f"temp/mp3/{file}", f"temp/changed_files/{file}")
-
-				# move them to output
-				final_path = f"output/{filename}"
-				if len(new_files) > 0:
-					shutil.move("temp/new_files", f"{final_path}/new_files")
-				if len(changed_files) > 0:
-					shutil.move("temp/changed_files", f"{final_path}/changed_files")
+					call(args)
+					bar.next()
+				bar.finish()
 
 				# cleanup
-				shutil.rmtree("temp/mp3")
-			else:
-				# for no hdiff files
-				os.makedirs(path(f"output/{filename} (no hdiff)"), exist_ok=True)
-				shutil.move("temp/mp3", f"output/{filename} (no hdiff)")
+				shutil.rmtree("temp/wav")
 
+				# update files list
+				all_files = [f"{f.split('.')[0]}.mp3" for f in all_files]
+				if not alone:
+					new_files = [f"{f.split('.')[0]}.mp3" for f in new_files]
+					changed_files = [f"{f.split('.')[0]}.mp3" for f in changed_files]
 
-			spinner.stop()
-			print(f"[{curr}/{steps}] Cleaning up")
+				# todo: something is wrong here with extraction of hdiff, it's missing files and not extracting everything ?
+				# print(all_files)
+				# print(new_files)
+				# print(changed_files)
+
+			#########################
+			### 7 - Map filenames ###
+			#########################
+
+			if skips[6] != "1":
+				curr += 1
+
+				# update spinner
+				spinner.text = f"[{curr}/{steps}] Mapping names"
+				spinner.start()
+
+				languages = ["english", "japanese", "chinese", "korean"]
+				mapFiles = [f"{path('mapping/mapping')}{f.capitalize()}.json" for f in languages]
+				namesTable = []
+
+				for language in mapFiles:
+					with open(language, "r") as f:
+						namesTable.append(json.loads(f.read()))
+						f.close()
+
+				if alone:
+					os.makedirs(path(f"temp/map/unmapped"), exist_ok=True)
+				else:
+					if len(new_files) > 0:
+						os.makedirs(path(f"temp/map/new_files/unmapped"), exist_ok=True)
+					if len(changed_files) > 0:
+						os.makedirs(path(f"temp/map/changed_files/unmapped"), exist_ok=True)
+
+				lang = None
+				for file in all_files:
+					for language in namesTable:
+						if lang is None or namesTable.index(language) == lang:
+							file_name = file.split(".")[0]
+							base_path = "temp/map"
+							if not alone:
+								if file in new_files:
+									base_path = "temp/map/new_files"
+								elif file in changed_files:
+									base_path = "temp/map/changed_files"
+
+							if file_name in language:
+								# lang detected, stick to it
+								lang = namesTable.index(language)
+
+								dir_path = path(f"{base_path}/{language[file_name]['path']}/{language[file_name]['name']}.mp3")
+								os.makedirs(os.path.dirname(dir_path), exist_ok=True)
+								shutil.copy(path(f"temp/mp3/{file}"), dir_path)
+							else:
+								shutil.copy(path(f"temp/mp3/{file}"), path(f"{base_path}/unmapped/{file}"))
+
+				# stop spinner
+				spinner.stop()
+				print(f"[{curr}/{steps}] Mapping names")
+
+			######################################################
+			### 8 - Clean everything and move result to output ###
+			######################################################
+
+			if skips[7] != "1":
+				curr += 1
+
+				# update spinner
+				spinner.text = f"[{curr}/{steps}] Cleaning up"
+				spinner.start()
+
+				filename = filename.split('.')[0]
+
+				os.rename("temp/map", f"temp/{filename}")
+				shutil.move(f"temp/{filename}", f"output/{filename}")
+
+				# todo: final cleanup, will get deleted anyway after so idk yet
+				spinner.stop()
+				print(f"[{curr}/{steps}] Cleaning up")
+
 		except Exception as e:
 			print("An error occured while processing this file ! Skipping to the next one, details of the error bellow :")
 			print(f"Line {sys.exc_info()[-1].tb_lineno}, {e}")
 
 	# all files processed
-	if os.path.exists("temp"):
+	if os.path.exists("temp") and skips[8] != "1":
 		shutil.rmtree("temp")
 	print("Done extracting everything !")
 
