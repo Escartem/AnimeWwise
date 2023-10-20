@@ -235,6 +235,8 @@ def main():
 					changed_files = [f"{f.split('.')[0]}.mp3" for f in changed_files]
 
 				# todo: something is wrong here with extraction of hdiff, it's missing files and not extracting everything ?
+				# actually it may not, the old method was just naming them by increasing numbers, one change and it offset all of them
+				# making two of the same nums to be different because of offset. The old method may actually extract unwanted stuff :O 
 				# print(all_files)
 				# print(new_files)
 				# print(changed_files)
