@@ -1,5 +1,7 @@
 # AnimeWwise
-Extract audio from .pck and .hdiff to mp3 with this tool. It can in theory extract any pck or hdiff file from any game even though it was made for Genshin Impact. There are others tools that do the same but none of them were working so I just made my own.
+Extract audio from .pck and .hdiff to mp3 including original filenames with this tool. It can in theory extract any pck or hdiff file from any game even though it was made for Genshin Impact. There are others tools that do the same but none of them were working so I just made my own.
+
+⚠️ Only audio from genshin will be exported with original filenames, and the coverage is very low, don't except every file to have a name
 
 # Usage
 
@@ -14,7 +16,6 @@ Extract audio from .pck and .hdiff to mp3 with this tool. It can in theory extra
 ---
 
 ## ℹ️ There is a separate branch called `dev` that may includes new features, you can check it out if you want to get them early. Those features are, as of right now :
-- export files with their original names
 - more export formats support
 - reverse search ?
 
