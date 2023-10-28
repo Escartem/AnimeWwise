@@ -1,5 +1,4 @@
 # Custom rewrite of the Wwise AKPK packages extractor, original by Nicknine and bnnm
-# TODO: use extracted files id with the mapping table to restore file names
 from filereader import FileReader
 import os
 
