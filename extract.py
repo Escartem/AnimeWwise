@@ -14,7 +14,7 @@ cwd = os.getcwd()
 path = lambda path: os.path.join(cwd, path)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 spinner = Halo(text="spinner", spinner={'interval': 100, 'frames': ['◜', '◠', '◝', '◞', '◡', '◟']}, placement="right")
-skips = "000111111" # used for debugging
+skips = "000000000" # used for debugging
 
 # 1 - original extract
 # 2 - patch
@@ -234,13 +234,6 @@ def main():
 					new_files = [f"{f.split('.')[0]}.mp3" for f in new_files]
 					changed_files = [f"{f.split('.')[0]}.mp3" for f in changed_files]
 
-				# todo: something is wrong here with extraction of hdiff, it's missing files and not extracting everything ?
-				# actually it may not, the old method was just naming them by increasing numbers, one change and it offset all of them
-				# making two of the same nums to be different because of offset. The old method may actually extract unwanted stuff :O 
-				# print(all_files)
-				# print(new_files)
-				# print(changed_files)
-
 			#########################
 			### 7 - Map filenames ###
 			#########################
@@ -311,7 +304,6 @@ def main():
 				os.rename("temp/map", f"temp/{filename}")
 				shutil.move(f"temp/{filename}", f"output/{filename}")
 
-				# todo: final cleanup, will get deleted anyway after so idk yet
 				spinner.stop()
 				print(f"[{curr}/{steps}] Cleaning up")
 
