@@ -262,27 +262,41 @@ def main():
 					if len(changed_files) > 0:
 						os.makedirs(path(f"temp/map/changed_files/unmapped"), exist_ok=True)
 
+				# guess lang
 				lang = None
 				for file in all_files:
-					for language in namesTable:
-						if lang is None or namesTable.index(language) == lang:
-							file_name = file.split(".")[0]
-							base_path = "temp/map"
-							if not alone:
-								if file in new_files:
-									base_path = "temp/map/new_files"
-								elif file in changed_files:
-									base_path = "temp/map/changed_files"
+					if lang is None or namesTable.index(language) == lang:
+						for language in namesTable:
+							if lang is None or namesTable.index(language) == lang:
+								file_name = file.split(".")[0]
 
-							if file_name in language:
-								# lang detected, stick to it
-								lang = namesTable.index(language)
+								if file_name in language:
+									# lang detected, stick to it
+									lang = namesTable.index(language)
 
-								dir_path = path(f"{base_path}/{language[file_name]['path']}/{language[file_name]['name']}.mp3")
-								os.makedirs(os.path.dirname(dir_path), exist_ok=True)
-								shutil.copy(path(f"temp/mp3/{file}"), dir_path)
-							else:
-								shutil.copy(path(f"temp/mp3/{file}"), path(f"{base_path}/unmapped/{file}"))
+				for file in all_files:
+					if lang is None:
+						language = []
+					else:
+						language = namesTable[lang]
+
+					file_name = file.split(".")[0]
+					base_path = "temp/map"
+					if not alone:
+						if file in new_files:
+							base_path = "temp/map/new_files"
+						elif file in changed_files:
+							base_path = "temp/map/changed_files"
+
+					if file_name in language:
+						# lang detected, stick to it
+						lang = namesTable.index(language)
+
+						dir_path = path(f"{base_path}/{language[file_name]['path']}/{language[file_name]['name']}.mp3")
+						os.makedirs(os.path.dirname(dir_path), exist_ok=True)
+						shutil.copy(path(f"temp/mp3/{file}"), dir_path)
+					else:
+						shutil.copy(path(f"temp/mp3/{file}"), path(f"{base_path}/unmapped/{file}"))
 
 				# stop spinner
 				spinner.stop()
