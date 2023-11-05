@@ -185,7 +185,7 @@ def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_
 		else:
 			path = "".join([f"{e}/" for e in list(lang_array.values())])
 
-		# se file name
+		# set file name
 		if alt_mode == 1 and is_externals == 1:
 			name = f"externals/{path}{file_id_1:08x}{file_id_2:08x}.{ext}"
 		else:
