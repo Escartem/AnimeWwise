@@ -2,7 +2,6 @@ import os
 import sys
 import json
 import shutil
-import zipfile
 import filecmp
 import wavescan
 import subprocess
