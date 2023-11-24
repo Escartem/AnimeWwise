@@ -125,7 +125,7 @@ def detect_bank_version(offset):
 
 	reader.SetBufferPos(current)
 
-def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_array, bank_version, output_folder, filter_bnk_only=0, filter_wem_only=0):
+def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_array, bank_version, output_folder, filter_bnk_only=0, filter_wem_only=0, include_name=False):
 	# check sector validity
 	if section_size == 0:
 		return
@@ -217,9 +217,15 @@ def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_
 		reader.SetBufferPos(offset)
 		file_data = reader.ReadBytes(size)
 
-		os.makedirs(output_folder, exist_ok=True)
+		if include_name:
+			file_path = os.path.join(output_folder, os.path.dirname(name))
+		else:
+			file_path = output_folder
+		name = os.path.basename(name)
 
-		with open(os.path.join(output_folder, os.path.basename(name)), "wb+") as f:
+		os.makedirs(file_path, exist_ok=True)
+
+		with open(os.path.join(file_path, name), "wb+") as f:
 			f.write(file_data)
 			f.close()
 
