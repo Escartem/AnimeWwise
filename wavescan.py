@@ -95,9 +95,9 @@ def get_langs(langs_sector_size):
 		reader.SetBufferPos(lang_offset)
 
 		if test_byte_1 == 0 or test_byte_2 == 0:
-			lang_name = reader.ReadBytes(0x20).decode("utf-16le").replace("\x00", "")
+			lang_name = reader.ReadBytes(0x20).decode("utf-16le", "ignore").replace("\x00", "")
 		else:
-			lang_name = reader.ReadBytes(0x10).decode("utf-8").replace("\x00", "")
+			lang_name = reader.ReadBytes(0x10).decode("utf-8", "ignore").replace("\x00", "")
 
 		lang_array[lang_id] = lang_name
 
