@@ -314,8 +314,7 @@ def main():
 
 				filename = filename.split('.')[0]
 
-				os.rename("temp/map", f"temp/{filename}")
-				shutil.move(f"temp/{filename}", f"output/{filename}")
+				shutil.move(f"temp/map", f"output/{filename}")
 
 				spinner.stop()
 				print(f"[{curr}/{steps}] Cleaning up")
