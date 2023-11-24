@@ -1,5 +1,6 @@
 # Custom rewrite of the Wwise AKPK packages extractor, original by Nicknine and bnnm
 from filereader import FileReader
+import traceback
 import os
 
 
@@ -16,8 +17,8 @@ def extract(input_file, output_folder):
 
 	# check file
 	if reader.ReadBytes(4) != b"AKPK":
-		print("Not a valid file")
-		return
+		file.close()
+		raise Exception("not a valid audio file")
 
 	# check endianness
 	reader.SetBufferPos(0x08)
@@ -28,8 +29,8 @@ def extract(input_file, output_folder):
 	elif endian_check == 0x1000000:
 		endianness = 1 # big
 	else:
-		print("uknown endianness, aborting")
-		return
+		file.close()
+		raise Exception("couldn't detect endianness")
 
 	# retrieve sectors in header
 	reader.SetBufferPos(0x04)
@@ -48,16 +49,26 @@ def extract(input_file, output_folder):
 	sectors = [[True, banks_sector_size, 0, 0, "bnk"], [False, sounds_sector_size, 1, 0, "wem"], [False, externals_sector_size, 1, 1, "wem"]]
 
 	# get langs in the file
-	lang_array = get_langs(languages_sector_size)
+	try:
+		lang_array = get_langs(languages_sector_size)
+	except Exception as e:
+		file.close()
+		raise Exception(f"failed to read languages, {e}, {traceback.format_exc()}")
 
 	# extract each sector
-	for sector in sectors:
-		extract_sector(*sector[1:], endianness, lang_array, bank_version, output_folder)
+	curr_sector = None
+	try:
+		for sector in sectors:
+			curr_sector = sector
+			extract_sector(*sector[1:], endianness, lang_array, bank_version, output_folder)
 
-		if sector[0] and bank_version == 0:
-			if externals_sector_size == 0:
-				print("can't detect bank version")
-			bank_version = 62
+			if sector[0] and bank_version == 0:
+				if externals_sector_size == 0:
+					print("can't detect bank version")
+				bank_version = 62
+	except Exception as e:
+		file.close()
+		raise Exception(f"failed to extract sector {curr_sector}, {e}, {traceback.format_exc()}")
 
 	# close
 	file.close()

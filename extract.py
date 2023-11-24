@@ -321,12 +321,14 @@ def main():
 				print(f"[{curr}/{steps}] Cleaning up")
 
 		except Exception as e:
+			print("")
 			print("An error occured while processing this file ! Skipping to the next one, details of the error bellow :")
 			print(f"Line {sys.exc_info()[-1].tb_lineno}, {e}")
 
 	# all files processed
 	if os.path.exists("temp") and skips[8] != "1":
 		shutil.rmtree("temp")
+	print("-"*30)
 	print("Done extracting everything !")
 
 if __name__ == "__main__":
