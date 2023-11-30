@@ -192,6 +192,12 @@ def main():
 
 				# cleanup
 				shutil.rmtree("temp/wem")
+				wem_length = len(all_files)
+				all_files = [f for f in os.listdir(path("temp/wav"))]
+				diff_length = wem_length - len(all_files)
+
+				if diff_length > 0:
+					print(f": Failed to extract {diff_length} files out of {wem_length} (probably no extractable content)")
 
 			######################################
 			### 6 - Convert .wav files to .mp3 ###
@@ -272,6 +278,8 @@ def main():
 								if file_name in language:
 									# lang detected, stick to it
 									lang = namesTable.index(language)
+
+				print(f"\n: {languages[lang] if lang is not None else 'no'} language detected {'(not an error)' if lang is None else ''}")
 
 				for file in all_files:
 					if lang is None:
