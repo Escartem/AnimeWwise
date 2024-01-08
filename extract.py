@@ -51,7 +51,7 @@ def main():
 		print("No files found !")
 		return
 
-	print(f"{len(files)} file(s) to extract")
+	print(f"{len(files)} file{'s' if len(files) != 1 else ''} to extract")
 	iteration = 0
 
 	for file in files:
