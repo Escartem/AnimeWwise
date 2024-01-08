@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import mapper
 import shutil
 import filecmp
 import wavescan
@@ -9,9 +10,11 @@ from halo import Halo
 from progress.bar import PixelBar
 
 
+print("Setting up...")
 cwd = os.getcwd()
 path = lambda path: os.path.join(cwd, path)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+mapper.load_mapping(path("mapping/latest.map"))
 spinner = Halo(text="spinner", spinner={'interval': 100, 'frames': ['◜', '◠', '◝', '◞', '◡', '◟']}, placement="right")
 skips = "000000000" # used for debugging
 
@@ -250,15 +253,6 @@ def main():
 				spinner.text = f"[{curr}/{steps}] Mapping names"
 				spinner.start()
 
-				languages = ["english", "japanese", "chinese", "korean"]
-				mapFiles = [f"{path('mapping/mapping')}{f.capitalize()}.json" for f in languages]
-				namesTable = []
-
-				for language in mapFiles:
-					with open(language, "r") as f:
-						namesTable.append(json.loads(f.read()))
-						f.close()
-
 				if alone:
 					os.makedirs(path(f"temp/map/unmapped"), exist_ok=True)
 				else:
@@ -267,26 +261,9 @@ def main():
 					if len(changed_files) > 0:
 						os.makedirs(path(f"temp/map/changed_files/unmapped"), exist_ok=True)
 
-				# guess lang
 				lang = None
-				for file in all_files:
-					if lang is None or namesTable.index(language) == lang:
-						for language in namesTable:
-							if lang is None or namesTable.index(language) == lang:
-								file_name = file.split(".")[0]
-
-								if file_name in language:
-									# lang detected, stick to it
-									lang = namesTable.index(language)
-
-				print(f"\n: {languages[lang] if lang is not None else 'no'} language detected {'(not an error)' if lang is None else ''}")
 
 				for file in all_files:
-					if lang is None:
-						language = []
-					else:
-						language = namesTable[lang]
-
 					file_name = file.split(".")[0]
 					base_path = "temp/map"
 					if not alone:
@@ -295,11 +272,14 @@ def main():
 						elif file in changed_files:
 							base_path = "temp/map/changed_files"
 
-					if file_name in language:
-						# lang detected, stick to it
-						lang = namesTable.index(language)
+					key_data = mapper.get_key(file_name, lang is None)
 
-						dir_path = path(f"{base_path}/{language[file_name]['path']}/{language[file_name]['name']}.mp3")
+					if key_data is not None:
+						if lang is None:
+							lang = key_data[1]
+							print(f"\n: {lang} detected")
+
+						dir_path = path(f"{base_path}/{key_data[0]}.mp3")
 						os.makedirs(os.path.dirname(dir_path), exist_ok=True)
 						shutil.copy(path(f"temp/mp3/{file}"), dir_path)
 					else:

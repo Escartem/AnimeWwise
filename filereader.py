@@ -21,6 +21,12 @@ class FileReader:
 		return struct.unpack(f"{endianness}{mode}", bytearray(self.stream.read(bufferLength)))[0]
 
 	# read methods
+	def ReadInt8(self, endianness:str=None) -> int:
+		return self._read("b", 1, endianness)
+
+	def ReadUInt8(self, endianness:str=None) -> int:
+		return self._read("B", 1, endianness)
+
 	def ReadInt16(self, endianness:str=None) -> int:
 		return self._read("h", 2, endianness)
 	
