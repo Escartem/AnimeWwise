@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 import mapper
 import shutil
 import filecmp
@@ -8,6 +7,7 @@ import wavescan
 import subprocess
 from halo import Halo
 from progress.bar import PixelBar
+import argparse
 
 
 print("Setting up...")
@@ -29,6 +29,13 @@ skips = "000000000" # used for debugging
 # 9 - temp clean up
 
 def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--ogg', action='store_true', help='Convert to .ogg instead of .mp3', default=False)
+	parse_args = parser.parse_args()
+
+	is_ogg = parse_args.ogg and True or False    
+	print(is_ogg and "Converting to .ogg" or "Converting to .mp3")
+
 	# Initial cleanup
 	if os.path.exists("temp") and skips[8] != "1":
 		shutil.rmtree("temp")
@@ -46,7 +53,7 @@ def main():
 	hdiff_files = [f for f in os.listdir("audio") if f.endswith(".pck") and os.path.exists(f"patch/{f}.hdiff")]
 	alone_files = [f for f in os.listdir("audio") if f.endswith(".pck") and not os.path.exists(f"patch/{f}.hdiff")]
 	files = [*hdiff_files, *alone_files]
-	
+
 	if len(files) == 0:
 		print("No files found !")
 		return
@@ -200,18 +207,24 @@ def main():
 				diff_length = wem_length - len(all_files)
 
 				if diff_length > 0:
-					print(f": Failed to extract {diff_length} files out of {wem_length} (probably no extractable content)")
+					print(
+						f": Failed to extract {diff_length} files out of {wem_length} (probably no extractable content)"
+					)
 
-			######################################
-			### 6 - Convert .wav files to .mp3 ###
-			######################################
+			#############################################
+			### 6 - Convert .wav files to .mp3 or ogg ###
+			#############################################
 
 			if skips[5] != "1":
 				curr += 1
 
 				# updates folders and progress bar
-				os.makedirs(path("temp/mp3"), exist_ok=True)
-				bar = PixelBar(f"[{curr}/{steps}] Converting to mp3 ", max=len(all_files), suffix='%(percent).1f%% - %(eta)ds left')
+				os.makedirs(path("temp/ogg" if is_ogg else "temp/mp3"), exist_ok=True)
+				bar = PixelBar(
+					f"[{curr}/{steps}] Converting to {'ogg' if is_ogg else 'mp3'} ",
+					max=len(all_files),
+					suffix="%(percent).1f%% - %(eta)ds left",
+				)
 
 				# update file list
 				all_files = [f"{f.split('.')[0]}.wav" for f in all_files]
@@ -223,10 +236,14 @@ def main():
 						"-i",
 						path(f"temp/wav/{file}"),
 						"-acodec",
-						"libmp3lame",
+						"libvorbis" if is_ogg else "libmp3lame",
 						"-b:a",
 						"192k",
-						path(f"temp/mp3/{file.split('.')[0]}.mp3"),
+						path(
+							f"temp/ogg/{file.split('.')[0]}.ogg"
+							if is_ogg
+							else f"temp/mp3/{file.split('.')[0]}.mp3"
+						),
 					]
 
 					call(args)
@@ -237,10 +254,20 @@ def main():
 				shutil.rmtree("temp/wav")
 
 				# update files list
-				all_files = [f"{f.split('.')[0]}.mp3" for f in all_files]
+				all_files = [
+					f"{f.split('.')[0]}.ogg" if is_ogg else f"{f.split('.')[0]}.mp3"
+					for f in all_files
+				]
+
 				if not alone:
-					new_files = [f"{f.split('.')[0]}.mp3" for f in new_files]
-					changed_files = [f"{f.split('.')[0]}.mp3" for f in changed_files]
+					new_files = [
+						f"{f.split('.')[0]}.ogg" if is_ogg else f"{f.split('.')[0]}.mp3"
+						for f in new_files
+					]
+					changed_files = [
+						f"{f.split('.')[0]}.ogg" if is_ogg else f"{f.split('.')[0]}.mp3"
+						for f in changed_files
+					]
 
 			#########################
 			### 7 - Map filenames ###
@@ -279,11 +306,11 @@ def main():
 							lang = key_data[1]
 							print(f"\n: {lang} detected")
 
-						dir_path = path(f"{base_path}/{key_data[0]}.mp3")
+						dir_path = path(f"{base_path}/{key_data[0]}.{('ogg' if is_ogg else 'mp3')}")
 						os.makedirs(os.path.dirname(dir_path), exist_ok=True)
-						shutil.copy(path(f"temp/mp3/{file}"), dir_path)
+						shutil.copy(path(f"temp/{'ogg' if is_ogg else 'mp3'}/{file}"), dir_path)
 					else:
-						shutil.copy(path(f"temp/mp3/{file}"), path(f"{base_path}/unmapped/{file}"))
+						shutil.copy(path(f"temp/{'ogg' if is_ogg else 'mp3'}/{file}"), path(f"{base_path}/unmapped/{file}"))
 
 				# stop spinner
 				spinner.stop()
