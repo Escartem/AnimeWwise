@@ -34,7 +34,9 @@ def main():
 	parse_args = parser.parse_args()
 
 	is_ogg = parse_args.ogg and True or False    
-	print(is_ogg and "Converting to .ogg" or "Converting to .mp3")
+
+	audio_format = 'ogg' if is_ogg else 'mp3'
+	print(f'Format: {audio_format}')
 
 	# Initial cleanup
 	if os.path.exists("temp") and skips[8] != "1":
@@ -219,9 +221,9 @@ def main():
 				curr += 1
 
 				# updates folders and progress bar
-				os.makedirs(path("temp/ogg" if is_ogg else "temp/mp3"), exist_ok=True)
+				os.makedirs(path(f"temp/{audio_format}"), exist_ok=True)
 				bar = PixelBar(
-					f"[{curr}/{steps}] Converting to {'ogg' if is_ogg else 'mp3'} ",
+					f"[{curr}/{steps}] Converting to {audio_format} ",
 					max=len(all_files),
 					suffix="%(percent).1f%% - %(eta)ds left",
 				)
@@ -239,11 +241,7 @@ def main():
 						"libvorbis" if is_ogg else "libmp3lame",
 						"-b:a",
 						"192k",
-						path(
-							f"temp/ogg/{file.split('.')[0]}.ogg"
-							if is_ogg
-							else f"temp/mp3/{file.split('.')[0]}.mp3"
-						),
+						path(f"temp/{audio_format}/{file.split('.')[0]}.{audio_format}"),
 					]
 
 					call(args)
@@ -254,20 +252,11 @@ def main():
 				shutil.rmtree("temp/wav")
 
 				# update files list
-				all_files = [
-					f"{f.split('.')[0]}.ogg" if is_ogg else f"{f.split('.')[0]}.mp3"
-					for f in all_files
-				]
+				all_files = [f"{f.split('.')[0]}.{audio_format}" for f in all_files]
 
 				if not alone:
-					new_files = [
-						f"{f.split('.')[0]}.ogg" if is_ogg else f"{f.split('.')[0]}.mp3"
-						for f in new_files
-					]
-					changed_files = [
-						f"{f.split('.')[0]}.ogg" if is_ogg else f"{f.split('.')[0]}.mp3"
-						for f in changed_files
-					]
+					new_files = [f"{f.split('.')[0]}.{audio_format}" for f in new_files]
+					changed_files = [f"{f.split('.')[0]}.{audio_format}" for f in changed_files]
 
 			#########################
 			### 7 - Map filenames ###
@@ -280,13 +269,10 @@ def main():
 				spinner.text = f"[{curr}/{steps}] Mapping names"
 				spinner.start()
 
-				if alone:
-					os.makedirs(path(f"temp/map/unmapped"), exist_ok=True)
-				else:
-					if len(new_files) > 0:
-						os.makedirs(path(f"temp/map/new_files/unmapped"), exist_ok=True)
-					if len(changed_files) > 0:
-						os.makedirs(path(f"temp/map/changed_files/unmapped"), exist_ok=True)
+				os.makedirs(path(f"temp/map/unmapped"), exist_ok=True)
+				if not alone:
+					os.makedirs(path(f"temp/map/new_files/unmapped"), exist_ok=True)
+					os.makedirs(path(f"temp/map/changed_files/unmapped"), exist_ok=True)
 
 				lang = None
 
@@ -306,11 +292,11 @@ def main():
 							lang = key_data[1]
 							print(f"\n: {lang} detected")
 
-						dir_path = path(f"{base_path}/{key_data[0]}.{('ogg' if is_ogg else 'mp3')}")
+						dir_path = path(f"{base_path}/{key_data[0]}.{audio_format}")
 						os.makedirs(os.path.dirname(dir_path), exist_ok=True)
-						shutil.copy(path(f"temp/{'ogg' if is_ogg else 'mp3'}/{file}"), dir_path)
+						shutil.copy(path(f"temp/{audio_format}/{file}"), dir_path)
 					else:
-						shutil.copy(path(f"temp/{'ogg' if is_ogg else 'mp3'}/{file}"), path(f"{base_path}/unmapped/{file}"))
+						shutil.copy(path(f"temp/{audio_format}/{file}"), path(f"{base_path}/unmapped/{file}"))
 
 				# stop spinner
 				spinner.stop()
