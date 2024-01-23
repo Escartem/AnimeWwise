@@ -30,12 +30,14 @@ skips = "000000000" # used for debugging
 
 def main():
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--ogg', action='store_true', help='Convert to .ogg instead of .mp3', default=False)
-	parse_args = parser.parse_args()
+	parser.add_argument("--format", nargs="?", type=str, default="mp3", help="Output audio format, can be either mp3 or ogg")
+	args = parser.parse_args()
 
-	is_ogg = parse_args.ogg and True or False    
+	formats = ["mp3", "ogg"]
+	audio_format = "mp3"
+	if args.format in formats:
+		audio_format = args.format
 
-	audio_format = 'ogg' if is_ogg else 'mp3'
 	print(f'Format: {audio_format}')
 
 	# Initial cleanup
@@ -209,9 +211,7 @@ def main():
 				diff_length = wem_length - len(all_files)
 
 				if diff_length > 0:
-					print(
-						f": Failed to extract {diff_length} files out of {wem_length} (probably no extractable content)"
-					)
+					print(f": Failed to extract {diff_length} files out of {wem_length} (probably no extractable content)")
 
 			#############################################
 			### 6 - Convert .wav files to .mp3 or ogg ###
@@ -238,7 +238,7 @@ def main():
 						"-i",
 						path(f"temp/wav/{file}"),
 						"-acodec",
-						"libvorbis" if is_ogg else "libmp3lame",
+						"libvorbis" if audio_format == "ogg" else "libmp3lame",
 						"-b:a",
 						"192k",
 						path(f"temp/{audio_format}/{file.split('.')[0]}.{audio_format}"),
