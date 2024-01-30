@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 import mapper
 import shutil
 import filecmp
@@ -8,6 +7,7 @@ import wavescan
 import subprocess
 from halo import Halo
 from progress.bar import PixelBar
+import argparse
 
 
 print("Setting up...")
@@ -29,6 +29,17 @@ skips = "000000000" # used for debugging
 # 9 - temp clean up
 
 def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument("--format", nargs="?", type=str, default="mp3", help="Output audio format, can be either mp3 or ogg")
+	args = parser.parse_args()
+
+	formats = ["mp3", "ogg"]
+	audio_format = "mp3"
+	if args.format in formats:
+		audio_format = args.format
+
+	print(f'Format: {audio_format}')
+
 	# Initial cleanup
 	if os.path.exists("temp") and skips[8] != "1":
 		shutil.rmtree("temp")
@@ -46,7 +57,7 @@ def main():
 	hdiff_files = [f for f in os.listdir("audio") if f.endswith(".pck") and os.path.exists(f"patch/{f}.hdiff")]
 	alone_files = [f for f in os.listdir("audio") if f.endswith(".pck") and not os.path.exists(f"patch/{f}.hdiff")]
 	files = [*hdiff_files, *alone_files]
-	
+
 	if len(files) == 0:
 		print("No files found !")
 		return
@@ -202,16 +213,20 @@ def main():
 				if diff_length > 0:
 					print(f": Failed to extract {diff_length} files out of {wem_length} (probably no extractable content)")
 
-			######################################
-			### 6 - Convert .wav files to .mp3 ###
-			######################################
+			#############################################
+			### 6 - Convert .wav files to .mp3 or ogg ###
+			#############################################
 
 			if skips[5] != "1":
 				curr += 1
 
 				# updates folders and progress bar
-				os.makedirs(path("temp/mp3"), exist_ok=True)
-				bar = PixelBar(f"[{curr}/{steps}] Converting to mp3 ", max=len(all_files), suffix='%(percent).1f%% - %(eta)ds left')
+				os.makedirs(path(f"temp/{audio_format}"), exist_ok=True)
+				bar = PixelBar(
+					f"[{curr}/{steps}] Converting to {audio_format} ",
+					max=len(all_files),
+					suffix="%(percent).1f%% - %(eta)ds left",
+				)
 
 				# update file list
 				all_files = [f"{f.split('.')[0]}.wav" for f in all_files]
@@ -223,10 +238,10 @@ def main():
 						"-i",
 						path(f"temp/wav/{file}"),
 						"-acodec",
-						"libmp3lame",
+						"libvorbis" if audio_format == "ogg" else "libmp3lame",
 						"-b:a",
 						"192k",
-						path(f"temp/mp3/{file.split('.')[0]}.mp3"),
+						path(f"temp/{audio_format}/{file.split('.')[0]}.{audio_format}"),
 					]
 
 					call(args)
@@ -237,10 +252,11 @@ def main():
 				shutil.rmtree("temp/wav")
 
 				# update files list
-				all_files = [f"{f.split('.')[0]}.mp3" for f in all_files]
+				all_files = [f"{f.split('.')[0]}.{audio_format}" for f in all_files]
+
 				if not alone:
-					new_files = [f"{f.split('.')[0]}.mp3" for f in new_files]
-					changed_files = [f"{f.split('.')[0]}.mp3" for f in changed_files]
+					new_files = [f"{f.split('.')[0]}.{audio_format}" for f in new_files]
+					changed_files = [f"{f.split('.')[0]}.{audio_format}" for f in changed_files]
 
 			#########################
 			### 7 - Map filenames ###
@@ -253,13 +269,10 @@ def main():
 				spinner.text = f"[{curr}/{steps}] Mapping names"
 				spinner.start()
 
-				if alone:
-					os.makedirs(path(f"temp/map/unmapped"), exist_ok=True)
-				else:
-					if len(new_files) > 0:
-						os.makedirs(path(f"temp/map/new_files/unmapped"), exist_ok=True)
-					if len(changed_files) > 0:
-						os.makedirs(path(f"temp/map/changed_files/unmapped"), exist_ok=True)
+				os.makedirs(path(f"temp/map/unmapped"), exist_ok=True)
+				if not alone:
+					os.makedirs(path(f"temp/map/new_files/unmapped"), exist_ok=True)
+					os.makedirs(path(f"temp/map/changed_files/unmapped"), exist_ok=True)
 
 				lang = None
 
@@ -279,11 +292,11 @@ def main():
 							lang = key_data[1]
 							print(f"\n: {lang} detected")
 
-						dir_path = path(f"{base_path}/{key_data[0]}.mp3")
+						dir_path = path(f"{base_path}/{key_data[0]}.{audio_format}")
 						os.makedirs(os.path.dirname(dir_path), exist_ok=True)
-						shutil.copy(path(f"temp/mp3/{file}"), dir_path)
+						shutil.copy(path(f"temp/{audio_format}/{file}"), dir_path)
 					else:
-						shutil.copy(path(f"temp/mp3/{file}"), path(f"{base_path}/unmapped/{file}"))
+						shutil.copy(path(f"temp/{audio_format}/{file}"), path(f"{base_path}/unmapped/{file}"))
 
 				# stop spinner
 				spinner.stop()
