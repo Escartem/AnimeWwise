@@ -3,18 +3,18 @@ import sys
 import mapper
 import shutil
 import filecmp
+import argparse
 import wavescan
 import subprocess
 from halo import Halo
 from progress.bar import PixelBar
-import argparse
 
 
 print("Setting up...")
 cwd = os.getcwd()
 path = lambda path: os.path.join(cwd, path)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-mapper.load_mapping(path("mapping/latest.map"))
+mapper = mapper.Mapper(path("mapping/latest.map"))
 spinner = Halo(text="spinner", spinner={'interval': 100, 'frames': ['◜', '◠', '◝', '◞', '◡', '◟']}, placement="right")
 skips = "000000000" # used for debugging
 
@@ -30,6 +30,7 @@ skips = "000000000" # used for debugging
 
 def main():
 	parser = argparse.ArgumentParser()
+	# TODO: add skip / select mapping option
 	parser.add_argument("--format", nargs="?", type=str, default="mp3", help="Output audio format, can be either mp3 or ogg")
 	args = parser.parse_args()
 
@@ -290,6 +291,7 @@ def main():
 					if key_data is not None:
 						if lang is None:
 							lang = key_data[1]
+							# TODO: use language for output path
 							print(f"\n: {lang} detected")
 
 						dir_path = path(f"{base_path}/{key_data[0]}.{audio_format}")
