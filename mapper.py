@@ -33,19 +33,31 @@ class Mapper:
 		# utils
 		val = lambda length: int.from_bytes(reader.ReadBytes(length), "little")
 		raw = lambda length: reader.ReadBytes(length).rstrip(b"\x00").decode("utf-8")
+		n2p = lambda val: [e[0] for e in enumerate(list(bin(val)[2:][::-1])) if e[1] == "1"]
 
 		# get map meta
 		reader.ReadBytes(2)
 
 		games = {
-			b"ys": "Genshin"
+			"ys": "Genshin",
+			"sr": "Star Rail"
 			# more later
 		}
 
+		coverages = [
+			"english voicelines",
+			"chinese voicelines",
+			"japanese voicelines",
+			"korean voicelines",
+			"music",
+			"sfx"
+		]
+
+		reader.ReadBytes(1) # header size
 		infos = {
-			"game": games[reader.ReadBytes(2)],
-			"version": list(raw(2)),
-			"null": reader.ReadBytes(4)
+			"game": games[raw(4)],
+			"version": list(raw(4)),
+			"coverage": int(raw(4))
 			# more later
 		}
 
@@ -54,19 +66,21 @@ class Mapper:
 		# read prefixes
 		prefixes = {}
 		n_prefixes = reader.ReadUInt8()
+		l_prefixes = reader.ReadUInt8()
 
 		for i in range(n_prefixes):
-			prefix = raw(4)
+			prefix = raw(l_prefixes)
 			marker = reader.ReadBytes(1)
 			prefixes[marker] = prefix
 
 		# read languages
 		langs_offsets = {}
 		n_langs = reader.ReadUInt8()
+		l_langs = reader.ReadUInt8()
 		
 		for i in range(n_langs):
 			offset = reader.GetBufferPos()
-			langs_offsets[offset] = raw(11)
+			langs_offsets[offset] = raw(l_langs)
 
 		# read folders
 		folder_offsets = {}
@@ -92,7 +106,11 @@ class Mapper:
 				path.append(folder_offsets[reader.ReadUInt16()])
 			
 			name_length = reader.ReadUInt8()
-			prefix = prefixes[reader.ReadBytes(1)]
+			prefix = reader.ReadBytes(1)
+			if prefix != b"\x00":
+				prefix = prefixes[prefix]
+			else:
+				prefix = ""
 			name = raw(name_length)
 			
 			name = f"{prefix}{name}"
@@ -108,7 +126,7 @@ class Mapper:
 		for i in range(n_keys):
 			key = raw(16)
 			
-			lang_offset = reader.ReadUInt8()
+			lang_offset = val(2)
 			file_offset = val(3)
 
 			keys_data[key] = [files_offsets[file_offset], langs_offsets[lang_offset]]
@@ -120,7 +138,14 @@ class Mapper:
 		print(f": {n_langs} supported languages")
 		print(f": {n_files} mapped files")
 		print(f": {n_keys} available keys")
-
+		print(f"")
+		print(f"> Mapping coverage")
+		coverage = n2p(infos["coverage"])
+		for val in coverage:
+			if val%2 == 0:
+				print(f": partial {coverages[val//2-1]}")
+			else:
+				print(f": {coverages[(val-1)//2]}")
 
 	def get_key(self, key, lang=False):
 		keys_data = self.keys_data
