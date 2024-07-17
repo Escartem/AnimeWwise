@@ -40,7 +40,8 @@ class Mapper:
 
 		games = {
 			"ys": "Genshin",
-			"sr": "Star Rail"
+			"sr": "Star Rail",
+			"zzz": "Zenless Zone Zero"
 			# more later
 		}
 
