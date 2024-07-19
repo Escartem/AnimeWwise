@@ -108,10 +108,7 @@ class Mapper:
 			
 			name_length = reader.ReadUInt8()
 			prefix = reader.ReadBytes(1)
-			if prefix != b"\x00":
-				prefix = prefixes[prefix]
-			else:
-				prefix = ""
+			prefix = prefixes[prefix]
 			name = raw(name_length)
 			
 			name = f"{prefix}{name}"
