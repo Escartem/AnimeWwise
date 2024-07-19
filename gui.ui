@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AnimeWwise</class>
+ <widget class="QMainWindow" name="AnimeWwise">
+  <property name="windowModality">
+   <enum>Qt::NonModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1100</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>1100</width>
+    <height>800</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>1100</width>
+    <height>800</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>AnimeWwise</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTabWidget" name="tabs">
+    <property name="geometry">
+     <rect>
+      <x>4</x>
+      <y>-1</y>
+      <width>1091</width>
+      <height>791</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
+    <property name="usesScrollButtons">
+     <bool>true</bool>
+    </property>
+    <property name="documentMode">
+     <bool>false</bool>
+    </property>
+    <property name="tabsClosable">
+     <bool>false</bool>
+    </property>
+    <property name="movable">
+     <bool>false</bool>
+    </property>
+    <property name="tabBarAutoHide">
+     <bool>false</bool>
+    </property>
+    <widget class="QWidget" name="extractTab">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <attribute name="title">
+      <string>Extract</string>
+     </attribute>
+     <widget class="QWidget" name="verticalLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>9</x>
+        <y>9</y>
+        <width>1071</width>
+        <height>741</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="mainVLayout">
+       <item>
+        <layout class="QGridLayout" name="ioGrid">
+         <item row="2" column="0">
+          <widget class="QLabel" name="outputLabel">
+           <property name="text">
+            <string>Output folder</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QPushButton" name="changeOutput">
+           <property name="text">
+            <string>Select</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="changeInput">
+           <property name="text">
+            <string>Select</string>
+           </property>
+           <property name="default">
+            <bool>false</bool>
+           </property>
+           <property name="flat">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QPushButton" name="changeAltInput">
+           <property name="text">
+            <string>Select</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="inputLabel">
+           <property name="text">
+            <string>Input folder</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="altInputLabel">
+           <property name="text">
+            <string>Diff folder (optional)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="inputPath">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="altInputPath">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="outputPath">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="separatorA">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QGridLayout" name="settingsGrid">
+         <item row="0" column="0">
+          <widget class="QLabel" name="outputFormatLabel">
+           <property name="text">
+            <string>Output format</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="assetMapLabel">
+           <property name="text">
+            <string>Asset map (optional)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="outputFormat">
+           <property name="currentText">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="assetMap"/>
+         </item>
+         <item row="0" column="2">
+          <widget class="QLabel" name="spacingLabel">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="startButton">
+         <property name="text">
+          <string>Start</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="Line" name="separatorB">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="progressWrapperLayout">
+         <item>
+          <layout class="QHBoxLayout" name="progressLayout">
+           <item>
+            <widget class="QLabel" name="progressLabel">
+             <property name="text">
+              <string>Progress</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QProgressBar" name="progress">
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="taskProgressLayout">
+           <item>
+            <widget class="QLabel" name="taskProgressLabel">
+             <property name="text">
+              <string>Task Progress</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QProgressBar" name="taskProgress">
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="console">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>220</height>
+          </size>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="browseTab">
+     <attribute name="title">
+      <string>Browse</string>
+     </attribute>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>inputPath</tabstop>
+  <tabstop>changeInput</tabstop>
+  <tabstop>altInputPath</tabstop>
+  <tabstop>changeAltInput</tabstop>
+  <tabstop>outputPath</tabstop>
+  <tabstop>changeOutput</tabstop>
+  <tabstop>outputFormat</tabstop>
+  <tabstop>assetMap</tabstop>
+  <tabstop>startButton</tabstop>
+  <tabstop>tabs</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
