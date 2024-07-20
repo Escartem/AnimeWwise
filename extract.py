@@ -249,6 +249,7 @@ class WwiseExtract:
 				if skips[6] != "1" or mapper != None:
 					print(f"Mapping names")
 
+					# TODO: remove unmapped folder if empty
 					os.makedirs(_p("temp", "map/unmapped"), exist_ok=True)
 					if not alone:
 						os.makedirs(_p("temp", f"map/new_files/unmapped"), exist_ok=True)
