@@ -1,4 +1,7 @@
 # AnimeWwise
+
+# ⚠️ as of right now, this branch won't be updated beyond genshin 4.7, refer to the v2 branch for newer version, more games and other stuff until merged
+
 Extract audio from `.pck` and `.hdiff` to `.mp3` or `.ogg` including original filenames with this tool. It can in theory extract any `.pck` or `.hdiff` file from any game even though it was made for Genshin Impact. There are others tools that do the same but none of them were working so I just made my own.
 
 ⚠️ Only audio from genshin will be exported with original filenames, and the coverage is very low, don't except every file to have a name
