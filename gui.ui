@@ -35,7 +35,7 @@
       <x>4</x>
       <y>-1</y>
       <width>1091</width>
-      <height>791</height>
+      <height>641</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -69,7 +69,7 @@
         <x>9</x>
         <y>9</y>
         <width>1071</width>
-        <height>741</height>
+        <height>601</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="mainVLayout">
@@ -162,13 +162,6 @@
        <item>
         <layout class="QGridLayout" name="settingsGrid">
          <item row="0" column="0">
-          <widget class="QLabel" name="outputFormatLabel">
-           <property name="text">
-            <string>Output format</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
           <widget class="QLabel" name="assetMapLabel">
            <property name="text">
             <string>Asset map (optional)</string>
@@ -176,95 +169,14 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="outputFormat">
-           <property name="currentText">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
           <widget class="QComboBox" name="assetMap"/>
-         </item>
-         <item row="0" column="2">
-          <widget class="QLabel" name="spacingLabel">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
          </item>
         </layout>
        </item>
        <item>
         <widget class="QPushButton" name="startButton">
          <property name="text">
-          <string>Start</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="Line" name="separatorB">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="progressWrapperLayout">
-         <item>
-          <layout class="QHBoxLayout" name="progressLayout">
-           <item>
-            <widget class="QLabel" name="progressLabel">
-             <property name="text">
-              <string>Progress</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QProgressBar" name="progress">
-             <property name="value">
-              <number>0</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="taskProgressLayout">
-           <item>
-            <widget class="QLabel" name="taskProgressLabel">
-             <property name="text">
-              <string>Task Progress</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QProgressBar" name="taskProgress">
-             <property name="value">
-              <number>0</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="line">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTextEdit" name="console">
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>220</height>
-          </size>
-         </property>
-         <property name="readOnly">
-          <bool>true</bool>
+          <string>Load file(s)</string>
          </property>
         </widget>
        </item>
@@ -275,9 +187,169 @@
      <attribute name="title">
       <string>Browse</string>
      </attribute>
+     <widget class="QTreeView" name="treeView">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1081</width>
+        <height>611</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab_3">
+     <attribute name="title">
+      <string>Page</string>
+     </attribute>
+     <widget class="QWidget" name="layoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>153</x>
+        <y>110</y>
+        <width>521</width>
+        <height>201</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="progressWrapperLayout_2">
+       <item>
+        <layout class="QHBoxLayout" name="progressLayout_2">
+         <item>
+          <widget class="QLabel" name="progressLabel_2">
+           <property name="text">
+            <string>Progress</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QProgressBar" name="progress_2">
+           <property name="value">
+            <number>0</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="taskProgressLayout_2">
+         <item>
+          <widget class="QLabel" name="taskProgressLabel_2">
+           <property name="text">
+            <string>Task Progress</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QProgressBar" name="taskProgress_2">
+           <property name="value">
+            <number>0</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QComboBox" name="outputFormat">
+      <property name="geometry">
+       <rect>
+        <x>529</x>
+        <y>400</y>
+        <width>261</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="currentText">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="outputFormatLabel">
+      <property name="geometry">
+       <rect>
+        <x>260</x>
+        <y>400</y>
+        <width>262</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Output format</string>
+      </property>
+     </widget>
     </widget>
    </widget>
+   <widget class="QTextEdit" name="console">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>640</y>
+      <width>1081</width>
+      <height>131</height>
+     </rect>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>16777215</width>
+      <height>220</height>
+     </size>
+    </property>
+    <property name="acceptDrops">
+     <bool>false</bool>
+    </property>
+    <property name="toolTipDuration">
+     <number>0</number>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
   </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1100</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionnot_working_here_yet"/>
+    <addaction name="actionclear_table"/>
+   </widget>
+   <widget class="QMenu" name="menuExtract">
+    <property name="title">
+     <string>Extract</string>
+    </property>
+    <addaction name="actionall"/>
+    <addaction name="actionselected"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuExtract"/>
+  </widget>
+  <action name="actionnot_working_here_yet">
+   <property name="text">
+    <string>not working here yet</string>
+   </property>
+  </action>
+  <action name="actionall">
+   <property name="text">
+    <string>all</string>
+   </property>
+  </action>
+  <action name="actionselected">
+   <property name="text">
+    <string>selected</string>
+   </property>
+  </action>
+  <action name="actionclear_table">
+   <property name="text">
+    <string>clear table</string>
+   </property>
+  </action>
  </widget>
  <tabstops>
   <tabstop>inputPath</tabstop>
@@ -286,8 +358,6 @@
   <tabstop>changeAltInput</tabstop>
   <tabstop>outputPath</tabstop>
   <tabstop>changeOutput</tabstop>
-  <tabstop>outputFormat</tabstop>
-  <tabstop>assetMap</tabstop>
   <tabstop>startButton</tabstop>
   <tabstop>tabs</tabstop>
  </tabstops>

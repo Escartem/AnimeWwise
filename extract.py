@@ -1,11 +1,14 @@
 import os
+import io
 import sys
 import time
+from mapper import Mapper
 import shutil
 import filecmp
 import tempfile
 import wavescan
 import subprocess
+from filereader import FileReader
 
 cwd = os.getcwd()
 path = lambda path: os.path.join(cwd, path)
@@ -36,8 +39,6 @@ class WwiseExtract:
 		}
 
 		self.progress = progress
-
-	# TODO: add skip / select mapping option
 
 	def path(self, base, path):
 		base_path = self.paths[base]
@@ -302,3 +303,64 @@ class WwiseExtract:
 
 		print("-"*30)
 		print("Done extracting everything !")
+
+
+	### new content ###
+
+	def load_folder(self):
+		self.mapper = None
+		if self.map is not None:
+			self.mapper = Mapper(os.path.join(os.getcwd(), f"maps/{self.map}"))
+		self.file_structure = {"folders": {}, "files": []}
+
+		files = [f for f in os.listdir(self.paths["input"]) if f.endswith(".pck")]
+
+		for file in files:
+			self.load_file(os.path.join(self.paths["input"], file))
+
+		return self.file_structure
+
+	def load_file(self, _input):
+		with open(_input, "rb") as f:
+			data = f.read()
+			f.close()
+		self.get_wems(data, os.path.basename(_input))
+
+	def get_wems(self, data, filename):
+		reader = FileReader(io.BytesIO(data), "little")
+		files = wavescan.get_data(reader)
+		self.map_names(files, filename)
+	
+	def map_names(self, files, filename):
+		mapper = self.mapper
+		base = self.file_structure
+
+		for file in files:
+			if mapper is not None:
+				key = mapper.get_key(file[0].split(".")[0])
+			else:
+				key = None
+			if key is not None:
+				self.add_to_structure(f"{filename}\\{key[0]}.wem".split("\\"), [file[1], file[2]])
+			else:
+				temp = base["folders"]
+				if filename not in temp:
+					temp[filename] = {"folders": {}, "files": []}
+				temp = temp[filename]["folders"]
+				if "unmapped" not in temp:
+					temp["unmapped"] = {"folders": {}, "files": []}
+				temp["unmapped"]["files"].append(file)
+
+		self.file_structure = base
+
+	def add_to_structure(self, parts, meta):
+		current_level = self.file_structure
+		for part in parts[:-1]:
+			if "folders" not in current_level:
+				current_level["folders"] = {}
+			if part not in current_level["folders"]:
+				current_level["folders"][part] = {"folders": {}, "files": []}
+			current_level = current_level["folders"][part]
+		if "files" not in current_level:
+			current_level["files"] = []
+		current_level["files"].append([parts[-1], meta[0], meta[1]])

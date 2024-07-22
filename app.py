@@ -5,8 +5,8 @@ import time
 import mapper
 import extract
 from PyQt5 import uic
-from PyQt5.QtGui import QTextCursor
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog
+from PyQt5.QtGui import QTextCursor, QStandardItemModel, QStandardItem
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMetaType
 
 QMetaType.type('QTextCursor')
@@ -30,31 +30,26 @@ class TextEditStream(QObject):
 		self.text_edit.insertPlainText(text)
 		self.text_edit.moveCursor(QTextCursor.End)
 
-class ExtractionWorker(QObject):
-	finished = pyqtSignal()
+class BackgroundWorker(QObject):
+	finished = pyqtSignal(dict)
 	progress = pyqtSignal(list)
 
-	def __init__(self, folders, _map, _format):
+	def __init__(self, action, folders, _map, _format):
 		super().__init__()
+		self.action = action
 		self.folders = folders
 		self.map = _map
 		self.format = _format
 
 	def run(self):
-		_map = None
-		if self.map:
-			_map = mapper.Mapper(os.path.join(os.getcwd(), f"maps/{self.map}"))
-			print("\n==========\n")
-		self.progress.emit(["total", 5])
-		extracter = extract.WwiseExtract(_map, self.format, *self.folders.values(), progress=self.progress.emit)
-		extracter.extract()
-		self.finished.emit()
+		fileStructure = extract.WwiseExtract(self.map, "mp3", *self.folders, progress="").load_folder()
+
+		self.finished.emit(fileStructure)
 
 class AnimeWwise(QMainWindow):
 	def __init__(self):
 		super(AnimeWwise, self).__init__()
 		uic.loadUi("gui.ui", self)
-		# self.setupUi(self)
 		self.maps = self.getMaps()
 		self.folders = {
 			"input": "",
@@ -66,6 +61,8 @@ class AnimeWwise(QMainWindow):
 
 		# utils
 		self.selectFolder = lambda: QFileDialog.getExistingDirectory(self, "Select Folder")
+
+		# self.updateTreeView()
 
 	def setFolder(self, elem, folder):
 		path = self.selectFolder()
@@ -108,15 +105,22 @@ class AnimeWwise(QMainWindow):
 			_map = None
 
 		self.extractThread = QThread()
-		self.extractWorker = ExtractionWorker(self.folders, _map, self.outputFormat.currentText())
+		self.extractWorker = BackgroundWorker("load", self.folders, _map, self.outputFormat.currentText())
 		self.extractWorker.moveToThread(self.extractThread)
 		self.extractThread.started.connect(self.extractWorker.run)
+		self.extractWorker.finished.connect(self.handleFinished)
 		self.extractWorker.finished.connect(self.extractThread.quit)
 		self.extractWorker.finished.connect(self.extractWorker.deleteLater)
 		self.extractThread.finished.connect(self.extractThread.deleteLater)
 
 		self.extractWorker.progress.connect(self.progressBarSlot)
 		self.extractThread.start()
+
+	@pyqtSlot(dict)
+	def handleFinished(self, data):
+		self.fileStructure = data
+		self.updateTreeView()
+		self.tabs.setCurrentIndex(1)
 
 	def _appendText(self, text):
 		cursor = self.console.textCursor()
@@ -125,6 +129,29 @@ class AnimeWwise(QMainWindow):
 		self.console.setTextCursor(cursor)
 		self.console.ensureCursorVisible()
 
+	def updateTreeView(self):
+		model = QStandardItemModel()
+		model.setHorizontalHeaderLabels(["Name", "Offset", "Size"])
+
+		root_item = model.invisibleRootItem()
+		self.addItems(root_item, self.fileStructure)
+
+		self.treeView.setModel(model)
+		self.treeView.expandAll()
+
+		self.treeView.header().setSectionResizeMode(0, QHeaderView.Stretch)
+		self.treeView.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+		self.treeView.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+
+	def addItems(self, parent, element):
+		for folder_name in sorted(element.get("folders", {}).keys()):
+			folder_content = element["folders"][folder_name]
+			folder_item = QStandardItem(folder_name)
+			parent.appendRow([folder_item, QStandardItem(""), QStandardItem("")])
+			self.addItems(folder_item, folder_content)
+
+		for file in sorted(element.get("files", [])):
+			parent.appendRow([QStandardItem(str(e)) for e in file])
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
