@@ -7,7 +7,7 @@ import extract
 from PyQt5 import uic
 from PyQt5.QtGui import QTextCursor, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMetaType
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMetaType, Qt
 
 QMetaType.type('QTextCursor')
 
@@ -37,14 +37,17 @@ class BackgroundWorker(QObject):
 	def __init__(self, action, folders, _map, _format):
 		super().__init__()
 		self.action = action
+		# TODO: dynamic args depending on action
 		self.folders = folders
 		self.map = _map
 		self.format = _format
 
 	def run(self):
-		fileStructure = extract.WwiseExtract(self.map, "mp3", *self.folders, progress="").load_folder()
-
-		self.finished.emit(fileStructure)
+		if self.action == "load":
+			print("Loading files and mapping if necessary...")
+			fileStructure = extract.WwiseExtract(self.map, "mp3", *self.folders, progress=self.progress.emit).load_folder()
+			print("Done !")
+			self.finished.emit({"action": "load", "content": fileStructure})
 
 class AnimeWwise(QMainWindow):
 	def __init__(self):
@@ -62,8 +65,6 @@ class AnimeWwise(QMainWindow):
 		# utils
 		self.selectFolder = lambda: QFileDialog.getExistingDirectory(self, "Select Folder")
 
-		# self.updateTreeView()
-
 	def setFolder(self, elem, folder):
 		path = self.selectFolder()
 		self.folders[folder] = path
@@ -77,7 +78,13 @@ class AnimeWwise(QMainWindow):
 		self.outputFormat.addItems(["mp3", "ogg"])
 		self.assetMap.addItems(["No map", *[f'{e["game"]} - v{e["version"]}' for e in self.maps["maps"]]])
 
-		self.startButton.clicked.connect(lambda: self.start())
+		self.tabs.setTabEnabled(1, False)
+		self.tabs.setTabEnabled(2, False)
+
+		self.loadFilesButton.clicked.connect(lambda: self.start())
+
+		self.actionClearTreeView.triggered.connect(lambda: self.resetTreeView())
+		self.actionExit.triggered.connect(lambda: self.close())
 
 	def getMaps(self):
 		with open("maps/index.json", "r") as f:
@@ -104,6 +111,9 @@ class AnimeWwise(QMainWindow):
 		else:
 			_map = None
 
+		self.tabs.setTabEnabled(0, False)
+		self.resetTreeView()
+
 		self.extractThread = QThread()
 		self.extractWorker = BackgroundWorker("load", self.folders, _map, self.outputFormat.currentText())
 		self.extractWorker.moveToThread(self.extractThread)
@@ -118,9 +128,12 @@ class AnimeWwise(QMainWindow):
 
 	@pyqtSlot(dict)
 	def handleFinished(self, data):
-		self.fileStructure = data
-		self.updateTreeView()
-		self.tabs.setCurrentIndex(1)
+		if data["action"] == "load":
+			self.fileStructure = data["content"]
+			self.updateTreeView()
+			self.tabs.setTabEnabled(0, True)
+			self.tabs.setTabEnabled(1, True)
+			self.tabs.setCurrentIndex(1)
 
 	def _appendText(self, text):
 		cursor = self.console.textCursor()
@@ -129,9 +142,15 @@ class AnimeWwise(QMainWindow):
 		self.console.setTextCursor(cursor)
 		self.console.ensureCursorVisible()
 
+	def resetTreeView(self):
+		model = QStandardItemModel()
+		self.treeView.setModel(model)
+		self.tabs.setTabEnabled(1, False)
+
 	def updateTreeView(self):
 		model = QStandardItemModel()
 		model.setHorizontalHeaderLabels(["Name", "Offset", "Size"])
+		# TODO: non swappable columns
 
 		root_item = model.invisibleRootItem()
 		self.addItems(root_item, self.fileStructure)
@@ -147,11 +166,15 @@ class AnimeWwise(QMainWindow):
 		for folder_name in sorted(element.get("folders", {}).keys()):
 			folder_content = element["folders"][folder_name]
 			folder_item = QStandardItem(folder_name)
+			folder_item.setCheckable(True)
+			# folder_item.setTristate(True)
 			parent.appendRow([folder_item, QStandardItem(""), QStandardItem("")])
 			self.addItems(folder_item, folder_content)
 
 		for file in sorted(element.get("files", [])):
-			parent.appendRow([QStandardItem(str(e)) for e in file])
+			file_item = QStandardItem(str(file[0]))
+			file_item.setCheckable(True)
+			parent.appendRow([file_item, QStandardItem(str(file[1])), QStandardItem(str(file[2]))])
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
