@@ -65,6 +65,13 @@ class AnimeWwise(QMainWindow):
 		# utils
 		self.selectFolder = lambda: QFileDialog.getExistingDirectory(self, "Select Folder")
 
+	def getMaps(self):
+		with open("maps/index.json", "r") as f:
+			maps = json.loads(f.read())
+			f.close()
+
+		return maps
+
 	def setFolder(self, elem, folder):
 		path = self.selectFolder()
 		self.folders[folder] = path
@@ -86,13 +93,10 @@ class AnimeWwise(QMainWindow):
 		self.actionClearTreeView.triggered.connect(lambda: self.resetTreeWidget())
 		self.actionExit.triggered.connect(lambda: self.close())
 
-	def getMaps(self):
-		with open("maps/index.json", "r") as f:
-			maps = json.loads(f.read())
-			f.close()
+		self.actionExtractSelected.triggered.connect(lambda: self.extractItems(False))
+		self.actionExtractAll.triggered.connect(lambda: self.extractItems(True))
 
-		return maps
-
+	# workers
 	@pyqtSlot(list)
 	def progressBarSlot(self, progress):
 		if progress[0] == "total":
@@ -100,6 +104,16 @@ class AnimeWwise(QMainWindow):
 		elif progress[0] == "task":
 			self.taskProgress.setValue(progress[1])
 
+	@pyqtSlot(dict)
+	def handleFinished(self, data):
+		if data["action"] == "load":
+			self.fileStructure = data["content"]
+			self.updateTreeWidget()
+			self.tabs.setTabEnabled(0, True)
+			self.tabs.setTabEnabled(1, True)
+			self.tabs.setCurrentIndex(1)
+
+	# page 1 - config
 	def start(self):
 		if "" in [self.folders["input"], self.folders["output"]]:
 			QMessageBox.warning(None, "Warning", "Missing input/output folder !", QMessageBox.Ok)
@@ -126,22 +140,7 @@ class AnimeWwise(QMainWindow):
 		self.extractWorker.progress.connect(self.progressBarSlot)
 		self.extractThread.start()
 
-	@pyqtSlot(dict)
-	def handleFinished(self, data):
-		if data["action"] == "load":
-			self.fileStructure = data["content"]
-			self.updateTreeWidget()
-			self.tabs.setTabEnabled(0, True)
-			self.tabs.setTabEnabled(1, True)
-			self.tabs.setCurrentIndex(1)
-
-	def _appendText(self, text):
-		cursor = self.console.textCursor()
-		cursor.movePosition(cursor.End)
-		cursor.insertText(text)
-		self.console.setTextCursor(cursor)
-		self.console.ensureCursorVisible()
-
+	# page 2 - browsing
 	def resetTreeWidget(self):
 		self.treeWidget.clear()
 		self.tabs.setTabEnabled(1, False)
@@ -182,6 +181,29 @@ class AnimeWwise(QMainWindow):
 				self.treeWidget.addTopLevelItem(file_item)
 			else:
 				parent.addChild(file_item)
+
+	# page 3 - extraction
+	def extractItems(self, _all):
+		checked_items = []
+	
+		def check_items(item, _all):
+			if item.checkState(0) == Qt.Checked or _all:
+				checked_items.append([item.text(column) for column in range(item.columnCount())])
+			for i in range(item.childCount()):
+				check_items(item.child(i), _all)
+		
+		for i in range(self.treeWidget.topLevelItemCount()):
+			check_items(self.treeWidget.topLevelItem(i), _all)
+		
+		print(checked_items)
+
+	# misc
+	def _appendText(self, text):
+		cursor = self.console.textCursor()
+		cursor.movePosition(cursor.End)
+		cursor.insertText(text)
+		self.console.setTextCursor(cursor)
+		self.console.ensureCursorVisible()
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
