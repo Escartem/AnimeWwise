@@ -9,7 +9,7 @@ from PyQt5.QtGui import QTextCursor, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView, QAbstractItemView, QTreeWidgetItem
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMetaType, Qt
 
-QMetaType.type('QTextCursor')
+QMetaType.type("QTextCursor")
 
 class TextEditStream(QObject):
 	append_text = pyqtSignal(str)
@@ -34,20 +34,25 @@ class BackgroundWorker(QObject):
 	finished = pyqtSignal(dict)
 	progress = pyqtSignal(list)
 
-	def __init__(self, action, folders, _map, _format):
+	def __init__(self, action, extract, data):
 		super().__init__()
 		self.action = action
-		# TODO: dynamic args depending on action
-		self.folders = folders
-		self.map = _map
-		self.format = _format
+		self.extract = extract
+
+		if action == "load":
+			self.input = data["input"]
+			self.map = data["map"]
+		if action == "extract":
+			self.input = data["input"]
 
 	def run(self):
 		if self.action == "load":
 			print("Loading files and mapping if necessary...")
-			fileStructure = extract.WwiseExtract(self.map, "mp3", *self.folders.values(), progress=self.progress.emit).load_folder()
+			fileStructure = self.extract.load_folder(self.map, self.input)
 			print("Done !")
 			self.finished.emit({"action": "load", "content": fileStructure})
+		if self.action == "extract":
+			self.extract.extract_files(self.input)
 
 class AnimeWwise(QMainWindow):
 	def __init__(self):
@@ -61,6 +66,7 @@ class AnimeWwise(QMainWindow):
 		}
 		self.setupActions()
 		sys.stdout = TextEditStream(self.console)
+		self.extract = extract.WwiseExtract()
 
 		# utils
 		self.selectFolder = lambda: QFileDialog.getExistingDirectory(self, "Select Folder")
@@ -82,15 +88,15 @@ class AnimeWwise(QMainWindow):
 		self.changeAltInput.clicked.connect(lambda: self.setFolder(self.altInputPath, "diff"))
 		self.changeOutput.clicked.connect(lambda: self.setFolder(self.outputPath, "output"))
 
-		self.outputFormat.addItems(["mp3", "ogg"])
+		self.outputFormat.addItems(["wem (fastest)", "wav (fast)", "mp3 (slow)", "ogg (slow)"])
 		self.assetMap.addItems(["No map", *[f'{e["game"]} - v{e["version"]}' for e in self.maps["maps"]]])
 
 		self.tabs.setTabEnabled(1, False)
 		self.tabs.setTabEnabled(2, False)
 
-		self.loadFilesButton.clicked.connect(lambda: self.start())
+		self.loadFilesButton.clicked.connect(lambda: self.loadFiles())
 
-		self.actionClearTreeView.triggered.connect(lambda: self.resetTreeWidget())
+		self.actionReset.triggered.connect(lambda: self.resetApp())
 		self.actionExit.triggered.connect(lambda: self.close())
 
 		self.actionExtractSelected.triggered.connect(lambda: self.extractItems(False))
@@ -109,14 +115,15 @@ class AnimeWwise(QMainWindow):
 		if data["action"] == "load":
 			self.fileStructure = data["content"]
 			self.updateTreeWidget()
-			self.tabs.setTabEnabled(0, True)
+			self.tabs.setTabEnabled(0, False)
 			self.tabs.setTabEnabled(1, True)
+			self.tabs.setTabEnabled(2, True)
 			self.tabs.setCurrentIndex(1)
 
 	# page 1 - config
-	def start(self):
-		if "" in [self.folders["input"], self.folders["output"]]:
-			QMessageBox.warning(None, "Warning", "Missing input/output folder !", QMessageBox.Ok)
+	def loadFiles(self):
+		if self.folders["input"] == "":
+			QMessageBox.warning(None, "Warning", "Missing input folder !", QMessageBox.Ok)
 			return
 
 		_map = self.assetMap.currentIndex()
@@ -128,17 +135,18 @@ class AnimeWwise(QMainWindow):
 		self.tabs.setTabEnabled(0, False)
 		self.resetTreeWidget()
 
-		self.extractThread = QThread()
-		self.extractWorker = BackgroundWorker("load", self.folders, _map, self.outputFormat.currentText())
-		self.extractWorker.moveToThread(self.extractThread)
-		self.extractThread.started.connect(self.extractWorker.run)
-		self.extractWorker.finished.connect(self.handleFinished)
-		self.extractWorker.finished.connect(self.extractThread.quit)
-		self.extractWorker.finished.connect(self.extractWorker.deleteLater)
-		self.extractThread.finished.connect(self.extractThread.deleteLater)
+		# why is all this required for threading damnit
+		self.backgroundThread = QThread()
+		self.backgroundWorker = BackgroundWorker("load", self.extract, {"input": self.folders["input"], "map": _map})
+		self.backgroundWorker.moveToThread(self.backgroundThread)
+		self.backgroundThread.started.connect(self.backgroundWorker.run)
+		self.backgroundWorker.finished.connect(self.handleFinished)
+		self.backgroundWorker.finished.connect(self.backgroundThread.quit)
+		self.backgroundWorker.finished.connect(self.backgroundWorker.deleteLater)
+		self.backgroundThread.finished.connect(self.backgroundThread.deleteLater)
 
-		self.extractWorker.progress.connect(self.progressBarSlot)
-		self.extractThread.start()
+		self.backgroundWorker.progress.connect(self.progressBarSlot)
+		self.backgroundThread.start()
 
 	# page 2 - browsing
 	def resetTreeWidget(self):
@@ -174,7 +182,7 @@ class AnimeWwise(QMainWindow):
 			self.addItems(folder_item, folder_content)
 
 		for file in sorted(element.get("files", [])):
-			file_item = QTreeWidgetItem([str(file[0]), str(file[1]), str(file[2])])
+			file_item = QTreeWidgetItem([str(file[0]), str(hex(file[1])), str(file[2])])
 			file_item.setFlags(file_item.flags() | Qt.ItemIsUserCheckable)
 			file_item.setCheckState(0, Qt.Unchecked)
 			if parent is None:
@@ -197,7 +205,26 @@ class AnimeWwise(QMainWindow):
 		
 		print(checked_items)
 
+		# yet another block of threading bs
+		self.backgroundThread = QThread()
+		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.folders["input"], "files": checked_items})
+		self.backgroundWorker.moveToThread(self.backgroundThread)
+		self.backgroundThread.started.connect(self.backgroundWorker.run)
+		self.backgroundWorker.finished.connect(self.handleFinished)
+		self.backgroundWorker.finished.connect(self.backgroundThread.quit)
+		self.backgroundWorker.finished.connect(self.backgroundWorker.deleteLater)
+		self.backgroundThread.finished.connect(self.backgroundThread.deleteLater)
+
+		self.backgroundWorker.progress.connect(self.progressBarSlot)
+		self.backgroundThread.start()
+
 	# misc
+	def resetApp(self):
+		self.resetTreeWidget()
+		self.tabs.setTabEnabled(0, True)
+		self.tabs.setTabEnabled(1, False)
+		self.tabs.setTabEnabled(2, False)
+
 	def _appendText(self, text):
 		cursor = self.console.textCursor()
 		cursor.movePosition(cursor.End)

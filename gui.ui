@@ -39,7 +39,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <property name="usesScrollButtons">
      <bool>true</bool>
@@ -75,15 +75,11 @@
       <layout class="QVBoxLayout" name="mainVLayout">
        <item>
         <layout class="QGridLayout" name="ioGrid">
-         <item row="2" column="0">
-          <widget class="QLabel" name="outputLabel">
-           <property name="text">
-            <string>Output folder</string>
+         <item row="1" column="2">
+          <widget class="QPushButton" name="changeAltInput">
+           <property name="enabled">
+            <bool>false</bool>
            </property>
-          </widget>
-         </item>
-         <item row="2" column="2">
-          <widget class="QPushButton" name="changeOutput">
            <property name="text">
             <string>Select</string>
            </property>
@@ -102,17 +98,13 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
-          <widget class="QPushButton" name="changeAltInput">
-           <property name="text">
-            <string>Select</string>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="altInputPath">
+           <property name="enabled">
+            <bool>false</bool>
            </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="inputLabel">
-           <property name="text">
-            <string>Input folder</string>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -120,6 +112,13 @@
           <widget class="QLabel" name="altInputLabel">
            <property name="text">
             <string>Diff folder (optional)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="inputLabel">
+           <property name="text">
+            <string>Input folder</string>
            </property>
           </widget>
          </item>
@@ -136,20 +135,6 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
-          <widget class="QLineEdit" name="altInputPath">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QLineEdit" name="outputPath">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
         </layout>
        </item>
        <item>
@@ -161,13 +146,6 @@
        </item>
        <item>
         <layout class="QGridLayout" name="settingsGrid">
-         <item row="2" column="0">
-          <widget class="QLabel" name="outputFormatLabel">
-           <property name="text">
-            <string>Output format</string>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="1">
           <widget class="QComboBox" name="assetMap"/>
          </item>
@@ -175,13 +153,6 @@
           <widget class="QLabel" name="assetMapLabel">
            <property name="text">
             <string>Asset map (optional)</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QComboBox" name="outputFormat">
-           <property name="currentText">
-            <string/>
            </property>
           </widget>
          </item>
@@ -231,49 +202,114 @@
      <attribute name="title">
       <string>Extract</string>
      </attribute>
-     <widget class="QWidget" name="layoutWidget">
+     <widget class="QWidget" name="verticalLayoutWidget_2">
       <property name="geometry">
        <rect>
-        <x>153</x>
-        <y>110</y>
-        <width>521</width>
-        <height>201</height>
+        <x>9</x>
+        <y>9</y>
+        <width>1061</width>
+        <height>601</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="progressWrapperLayout_2">
+      <layout class="QVBoxLayout" name="mainVLayout2">
        <item>
-        <layout class="QHBoxLayout" name="progressLayout_2">
+        <layout class="QHBoxLayout" name="outputLayout">
          <item>
-          <widget class="QLabel" name="progressLabel_2">
+          <widget class="QLabel" name="outputLabel">
            <property name="text">
-            <string>Progress</string>
+            <string>Output folder</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QProgressBar" name="progress_2">
-           <property name="value">
-            <number>0</number>
+          <widget class="QLineEdit" name="outputPath">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="changeOutput">
+           <property name="text">
+            <string>Select</string>
            </property>
           </widget>
          </item>
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="taskProgressLayout_2">
+        <layout class="QHBoxLayout" name="outputFormatLayout">
          <item>
-          <widget class="QLabel" name="taskProgressLabel_2">
+          <widget class="QLabel" name="outputFormatLabel">
            <property name="text">
-            <string>Task Progress</string>
+            <string>Output format</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QProgressBar" name="taskProgress_2">
-           <property name="value">
-            <number>0</number>
+          <widget class="QComboBox" name="outputFormat">
+           <property name="currentText">
+            <string/>
            </property>
           </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="progressWrapperLayout">
+         <item>
+          <layout class="QHBoxLayout" name="totalProgressLayout">
+           <item>
+            <widget class="QLabel" name="totalProgressLabel">
+             <property name="text">
+              <string>Total progress</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QProgressBar" name="totalProgress">
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="fileProgressLayout">
+           <item>
+            <widget class="QLabel" name="fileProgressLabel">
+             <property name="text">
+              <string>Per file progress</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QProgressBar" name="fileProgress">
+             <property name="value">
+              <number>0</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="extractLayout">
+           <item>
+            <widget class="QPushButton" name="extractAll">
+             <property name="text">
+              <string>Extract All</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="extractSelected">
+             <property name="text">
+              <string>Extract Selected</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -320,19 +356,19 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionClearTreeView"/>
+    <addaction name="actionReset"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuExtract">
     <property name="enabled">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="title">
      <string>Extract</string>
     </property>
-    <addaction name="actionall"/>
-    <addaction name="actionselected"/>
+    <addaction name="actionExtractAll"/>
+    <addaction name="actionExtractSelected"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuExtract"/>
@@ -342,19 +378,19 @@
     <string>not working here yet</string>
    </property>
   </action>
-  <action name="actionall">
+  <action name="actionExtractAll">
    <property name="text">
     <string>All files</string>
    </property>
   </action>
-  <action name="actionselected">
+  <action name="actionExtractSelected">
    <property name="text">
     <string>Selected files</string>
    </property>
   </action>
-  <action name="actionClearTreeView">
+  <action name="actionReset">
    <property name="text">
-    <string>Clear Table</string>
+    <string>Reset</string>
    </property>
   </action>
   <action name="actionExit">
@@ -368,8 +404,6 @@
   <tabstop>changeInput</tabstop>
   <tabstop>altInputPath</tabstop>
   <tabstop>changeAltInput</tabstop>
-  <tabstop>outputPath</tabstop>
-  <tabstop>changeOutput</tabstop>
   <tabstop>loadFilesButton</tabstop>
   <tabstop>tabs</tabstop>
  </tabstops>

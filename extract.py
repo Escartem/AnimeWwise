@@ -9,10 +9,12 @@ import tempfile
 import wavescan
 import subprocess
 from filereader import FileReader
+from allocator import Allocator
 
 cwd = os.getcwd()
 path = lambda path: os.path.join(cwd, path)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+allocator = Allocator()
 
 skips = "000000000" # used for debugging
 
@@ -27,18 +29,18 @@ skips = "000000000" # used for debugging
 # 9 - temp clean up
 
 class WwiseExtract:
-	def __init__(self, _map, _format, input_folder, output_folder, diff_folder, progress):
-		self.map = _map
-		self.format = _format
+	def __init__(self):
+		# self.map = _map
+		# self.format = _format
 
 		self.paths = {
-			"input": input_folder,
-			"output": output_folder,
-			"diff": diff_folder,
+			"input": "",
+			"output": "",
+			"diff": "",
 			"temp": tempfile.TemporaryDirectory()
 		}
 
-		self.progress = progress
+		# self.progress = progress
 
 	def path(self, base, path):
 		base_path = self.paths[base]
@@ -46,7 +48,7 @@ class WwiseExtract:
 			base_path = base_path.name
 		return os.path.join(base_path, path)
 
-	def extract(self):
+	def extract2(self):
 		audio_format = self.format
 		mapper = self.map
 		_p = self.path # lazy
@@ -305,18 +307,18 @@ class WwiseExtract:
 		print("Done extracting everything !")
 
 
-	### new content ###
+	### loading files ###
 
-	def load_folder(self):
+	def load_folder(self, _map, path):
 		self.mapper = None
-		if self.map is not None:
-			self.mapper = Mapper(os.path.join(os.getcwd(), f"maps/{self.map}"))
+		if _map is not None:
+			self.mapper = Mapper(os.path.join(os.getcwd(), f"maps/{_map}"))
 		self.file_structure = {"folders": {}, "files": []}
 
-		files = [f for f in os.listdir(self.paths["input"]) if f.endswith(".pck")]
+		files = [f for f in os.listdir(path) if f.endswith(".pck")]
 
 		for file in files:
-			self.load_file(os.path.join(self.paths["input"], file))
+			self.load_file(os.path.join(path, file))
 
 		return self.file_structure
 
@@ -364,3 +366,11 @@ class WwiseExtract:
 		if "files" not in current_level:
 			current_level["files"] = []
 		current_level["files"].append([parts[-1], meta[0], meta[1]])
+
+	### extracting files ###
+
+	def extract_files(self, _input):
+		# load all pck, then extract each file and apply conversion if required
+		# allocator.load_file(os.path.join(_input, "2050.pck"))
+		# allocator.read_at("2050.pck", 0, 0)
+		pass
