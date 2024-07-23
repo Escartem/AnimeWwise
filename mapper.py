@@ -166,3 +166,9 @@ class Mapper:
 			data.append(self.langs_offsets[int.from_bytes(key_data[:1], "little")])
 
 		return data
+
+	def reset(self):
+		self.reader = None
+		self.langs_offsets.clear()
+		self.files_offsets.clear()
+		self.keys_data.clear()

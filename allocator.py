@@ -1,5 +1,4 @@
 # memory manager to prevent redundant calls to files and save up disk usage
-# may cause massive ram usage if we input too many pck at once, fix required
 import os
 import mmap
 
@@ -10,13 +9,14 @@ class Allocator:
 	def load_file(self, path):
 		filename = os.path.basename(path)
 		with open(path, "r+b") as f:
-			mmap_object = mmap.mmap(f.fileno(), 0)
+			mmap_object = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
 
-		self.files[filename] = mmap_object,
-
+		self.files[filename] = mmap_object
 
 	def read_at(self, file, offset, size):
-		data = self.files[file][offset:offset+size]
+		mmap_object = self.files[file]
+		mmap_object.seek(offset)
+		data = mmap_object.read(size)
 		return data
 
 	def free_mem(self):

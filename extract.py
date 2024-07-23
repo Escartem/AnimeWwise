@@ -14,7 +14,6 @@ from allocator import Allocator
 cwd = os.getcwd()
 path = lambda path: os.path.join(cwd, path)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-allocator = Allocator()
 
 skips = "000000000" # used for debugging
 
@@ -39,6 +38,8 @@ class WwiseExtract:
 			"diff": "",
 			"temp": tempfile.TemporaryDirectory()
 		}
+
+		self.allocator = Allocator()
 
 		# self.progress = progress
 
@@ -374,3 +375,9 @@ class WwiseExtract:
 		# allocator.load_file(os.path.join(_input, "2050.pck"))
 		# allocator.read_at("2050.pck", 0, 0)
 		pass
+	### other ###
+
+	def reset(self):
+		if self.mapper is not None:
+			self.mapper.reset()
+		self.allocator.free_mem()

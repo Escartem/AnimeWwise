@@ -221,6 +221,7 @@ class AnimeWwise(QMainWindow):
 	# misc
 	def resetApp(self):
 		self.resetTreeWidget()
+		self.extract.reset()
 		self.tabs.setTabEnabled(0, True)
 		self.tabs.setTabEnabled(1, False)
 		self.tabs.setTabEnabled(2, False)

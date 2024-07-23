@@ -152,7 +152,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="assetMapLabel">
            <property name="text">
-            <string>Asset map (optional)</string>
+            <string>Asset map</string>
            </property>
           </widget>
          </item>
