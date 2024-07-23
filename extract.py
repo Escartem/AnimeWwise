@@ -368,27 +368,82 @@ class WwiseExtract:
 
 	### extracting files ###
 
-	def extract_files(self, _input, files, output, format, progress):
+	def extract_files(self, _input, files, output, _format, progress):
+		temp_dir = tempfile.TemporaryDirectory()
+
+		# wem
+		if _format == "wem":
+			output_folder = output
+		else:
+			output_folder = os.path.join(temp_dir.name, "wem")
+
+		self.extract_wem(_input, files, output_folder, progress)
+
+		if _format == "wem":
+			temp_dir.cleanup()
+			return
+
+		# wav
+		new_input = output_folder
+		files = [os.path.join("/".join(file["path"]), file["name"]) for file in files]
+
+		if _format == "wav":
+			output_folder = output
+		else:
+			output_folder = os.path.join(temp_dir.name, "wav")
+
+		self.extract_wav(new_input, files, output_folder, progress)
+
+		if _format == "wav":
+			temp_dir.cleanup()
+			return
+
+		new_input = output_folder
+		# TODO: add mp3 and ogg
+
+	def extract_wem(self, _input, files, output, progress):
+		print(": Extracting audio as wem")
 		all_sources = list(set([e["source"] for e in files]))
-		
+
 		for source in all_sources:
 			self.allocator.load_file(os.path.join(_input, source))
 
 		pos = 0
 		for file in files:
 			pos += 1
-			progress(["total", pos * 100 // len(files)])
+			progress(["file", pos * 100 // len(files)])
 
 			data = self.allocator.read_at(file["source"], file["offset"], file["size"])
+			
 			filepath = os.path.join("/".join(file["path"]), file["name"])
 			fullpath = os.path.join(output, filepath)
 			os.makedirs(os.path.dirname(fullpath), exist_ok=True)
+			
 			with open(fullpath, "wb") as f:
 				f.write(data)
 				f.close()
 
 		self.allocator.free_mem()
-		os.startfile(output)
+
+	def extract_wav(self, _input, files, output, progress):
+		print(": Converting audio to wav")
+		pos = 0
+		for file in files:
+			pos += 1
+			progress(["file", pos * 100 // len(files)])
+
+			filename = f'{os.path.basename(file).split(".")[0]}.wav'
+			filepath = os.path.join(output, os.path.dirname(file), filename)
+			os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+			args = [
+				path("tools/vgmstream/vgmstream-cli.exe"),
+				"-o",
+				filepath,
+				os.path.join(_input, file)
+			]
+
+			call(args)
 		
 	### other ###
 

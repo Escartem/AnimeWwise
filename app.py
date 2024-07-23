@@ -119,7 +119,7 @@ class AnimeWwise(QMainWindow):
 	def progressBarSlot(self, progress):
 		if progress[0] == "total":
 			self.totalProgress.setValue(progress[1])
-		elif progress[0] == "task":
+		elif progress[0] == "file":
 			self.fileProgress.setValue(progress[1])
 
 	@pyqtSlot(dict)
@@ -144,6 +144,7 @@ class AnimeWwise(QMainWindow):
 			self.tabs.setTabEnabled(2, True)
 			self.tabs.setCurrentIndex(2)
 			print("Finished extracting everything !")
+			os.startfile(self.folders["output"])
 
 	# page 1 - config
 	def loadFiles(self):
@@ -239,7 +240,7 @@ class AnimeWwise(QMainWindow):
 
 		# yet another block of threading bs
 		self.backgroundThread = QThread()
-		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.folders["input"], "files": checked_items, "format": "wem", "output": self.folders["output"]})
+		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.folders["input"], "files": checked_items, "format": self.outputFormat.currentText()[:3], "output": self.folders["output"]})
 		self.backgroundWorker.moveToThread(self.backgroundThread)
 		self.backgroundThread.started.connect(self.backgroundWorker.run)
 		self.backgroundWorker.finished.connect(self.handleFinished)
