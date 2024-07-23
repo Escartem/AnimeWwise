@@ -31,8 +31,10 @@ class Mapper:
 		reader = self.reader
 
 		# utils
-		val = lambda length: int.from_bytes(reader.ReadBytes(length), "little")
-		raw = lambda length: reader.ReadBytes(length).rstrip(b"\x00").decode("utf-8")
+		val = lambda length: vl2(reader.ReadBytes(length))
+		vl2 = lambda data: int.from_bytes(data, "little")
+		raw = lambda length: rw2(reader.ReadBytes(length))
+		rw2 = lambda data: data.rstrip(b"\x00").decode("utf-8")
 		n2p = lambda val: [e[0] for e in enumerate(list(bin(val)[2:][::-1])) if e[1] == "1"]
 
 		# get map meta
@@ -54,11 +56,14 @@ class Mapper:
 			"sfx"
 		]
 
-		reader.ReadBytes(1) # header size
+		header_size = val(1) # header size
+		block_size = 4
+		header_blocks = [reader.ReadBytes(block_size) for _ in range(header_size // block_size)]
+
 		infos = {
-			"game": games[raw(4)],
-			"version": list(raw(4)),
-			"coverage": int(raw(4))
+			"game": games[rw2(header_blocks[0])],
+			"version": list(rw2(header_blocks[1])),
+			"coverage": int(rw2(header_blocks[2])),
 			# more later
 		}
 
@@ -82,6 +87,8 @@ class Mapper:
 		for i in range(n_langs):
 			offset = reader.GetBufferPos()
 			langs_offsets[offset] = raw(l_langs)
+
+		self.langs_offsets = langs_offsets
 
 		# read folders
 		folder_offsets = {}
@@ -120,17 +127,16 @@ class Mapper:
 
 			files_offsets[offset] = path
 
+		self.files_offsets = files_offsets
+
 		# read keys
+		# GI 3649050
 		keys_data = {}
 		n_keys = val(3)
 
-		for i in range(n_keys):
-			key = raw(16)
-			
-			lang_offset = val(2)
-			file_offset = val(3)
-
-			keys_data[key] = [files_offsets[file_offset], langs_offsets[lang_offset]]
+		left = reader.GetRemainingLength()
+		data = bytearray(reader.ReadBytes(left))
+		keys_data = {rw2(data[i:i+16]): bytes(data[i+16:i+21]) for i in range(0, len(data), 21)}
 
 		self.keys_data = keys_data
 
@@ -154,9 +160,9 @@ class Mapper:
 			return None
 
 		key_data = keys_data[key]
-		data = [key_data[0]]
+		data = [self.files_offsets[int.from_bytes(key_data[2:], "little")]]
 
 		if lang:
-			data.append(key_data[1])
+			data.append(self.langs_offsets[int.from_bytes(key_data[:1], "little")])
 
 		return data
