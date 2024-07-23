@@ -6,7 +6,7 @@ import mapper
 import extract
 from PyQt5 import uic
 from PyQt5.QtGui import QTextCursor, QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView, QAbstractItemView, QTreeWidgetItem
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMetaType, Qt
 
 QMetaType.type('QTextCursor')
@@ -45,7 +45,7 @@ class BackgroundWorker(QObject):
 	def run(self):
 		if self.action == "load":
 			print("Loading files and mapping if necessary...")
-			fileStructure = extract.WwiseExtract(self.map, "mp3", *self.folders, progress=self.progress.emit).load_folder()
+			fileStructure = extract.WwiseExtract(self.map, "mp3", *self.folders.values(), progress=self.progress.emit).load_folder()
 			print("Done !")
 			self.finished.emit({"action": "load", "content": fileStructure})
 
@@ -83,7 +83,7 @@ class AnimeWwise(QMainWindow):
 
 		self.loadFilesButton.clicked.connect(lambda: self.start())
 
-		self.actionClearTreeView.triggered.connect(lambda: self.resetTreeView())
+		self.actionClearTreeView.triggered.connect(lambda: self.resetTreeWidget())
 		self.actionExit.triggered.connect(lambda: self.close())
 
 	def getMaps(self):
@@ -112,7 +112,7 @@ class AnimeWwise(QMainWindow):
 			_map = None
 
 		self.tabs.setTabEnabled(0, False)
-		self.resetTreeView()
+		self.resetTreeWidget()
 
 		self.extractThread = QThread()
 		self.extractWorker = BackgroundWorker("load", self.folders, _map, self.outputFormat.currentText())
@@ -130,7 +130,7 @@ class AnimeWwise(QMainWindow):
 	def handleFinished(self, data):
 		if data["action"] == "load":
 			self.fileStructure = data["content"]
-			self.updateTreeView()
+			self.updateTreeWidget()
 			self.tabs.setTabEnabled(0, True)
 			self.tabs.setTabEnabled(1, True)
 			self.tabs.setCurrentIndex(1)
@@ -142,39 +142,46 @@ class AnimeWwise(QMainWindow):
 		self.console.setTextCursor(cursor)
 		self.console.ensureCursorVisible()
 
-	def resetTreeView(self):
-		model = QStandardItemModel()
-		self.treeView.setModel(model)
+	def resetTreeWidget(self):
+		self.treeWidget.clear()
 		self.tabs.setTabEnabled(1, False)
 
-	def updateTreeView(self):
-		model = QStandardItemModel()
-		model.setHorizontalHeaderLabels(["Name", "Offset", "Size"])
-		# TODO: non swappable columns
+	def updateTreeWidget(self):
+		self.treeWidget.clear()
+		self.treeWidget.setColumnCount(3)
+		self.treeWidget.setHeaderLabels(["Name", "Offset", "Size"])
+		
+		self.addItems(None, self.fileStructure)
 
-		root_item = model.invisibleRootItem()
-		self.addItems(root_item, self.fileStructure)
+		self.treeWidget.expandAll()
+		self.treeWidget.header().setSectionResizeMode(0, QHeaderView.Stretch)
+		self.treeWidget.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+		self.treeWidget.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+		self.treeWidget.setHeaderHidden(False)
 
-		self.treeView.setModel(model)
-		self.treeView.expandAll()
-
-		self.treeView.header().setSectionResizeMode(0, QHeaderView.Stretch)
-		self.treeView.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-		self.treeView.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+		self.treeWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+		self.treeWidget.setDragDropMode(QAbstractItemView.NoDragDrop)
 
 	def addItems(self, parent, element):
 		for folder_name in sorted(element.get("folders", {}).keys()):
 			folder_content = element["folders"][folder_name]
-			folder_item = QStandardItem(folder_name)
-			folder_item.setCheckable(True)
-			# folder_item.setTristate(True)
-			parent.appendRow([folder_item, QStandardItem(""), QStandardItem("")])
+			folder_item = QTreeWidgetItem([folder_name, "", ""])
+			folder_item.setFlags(folder_item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
+			folder_item.setCheckState(0, Qt.Unchecked)
+			if parent is None:
+				self.treeWidget.addTopLevelItem(folder_item)
+			else:
+				parent.addChild(folder_item)
 			self.addItems(folder_item, folder_content)
 
 		for file in sorted(element.get("files", [])):
-			file_item = QStandardItem(str(file[0]))
-			file_item.setCheckable(True)
-			parent.appendRow([file_item, QStandardItem(str(file[1])), QStandardItem(str(file[2]))])
+			file_item = QTreeWidgetItem([str(file[0]), str(file[1]), str(file[2])])
+			file_item.setFlags(file_item.flags() | Qt.ItemIsUserCheckable)
+			file_item.setCheckState(0, Qt.Unchecked)
+			if parent is None:
+				self.treeWidget.addTopLevelItem(file_item)
+			else:
+				parent.addChild(file_item)
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
