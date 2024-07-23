@@ -44,15 +44,27 @@ class BackgroundWorker(QObject):
 			self.map = data["map"]
 		if action == "extract":
 			self.input = data["input"]
+			self.files = data["files"]
+			self.format = data["format"]
+			self.output = data["output"]
 
 	def run(self):
 		if self.action == "load":
 			print("Loading files and mapping if necessary...")
 			fileStructure = self.extract.load_folder(self.map, self.input)
+			if fileStructure is None:
+				self.finished.emit({"action": "error", "content": {"msg": "Nothing found !", "state": 1}})
+				print("Nothing found !")
+				return
 			print("Done !")
 			self.finished.emit({"action": "load", "content": fileStructure})
 		if self.action == "extract":
-			self.extract.extract_files(self.input)
+			if len(self.files) == 0:
+				self.finished.emit({"action": "error", "content": {"msg": "Nothing selected !", "state": 2}})
+				return
+			print(f"Extracting {len(self.files)} files...")
+			self.extract.extract_files(self.input, self.files, self.output, self.format, progress=self.progress.emit)
+			self.finished.emit({"action": "extract"})
 
 class AnimeWwise(QMainWindow):
 	def __init__(self):
@@ -99,16 +111,16 @@ class AnimeWwise(QMainWindow):
 		self.actionReset.triggered.connect(lambda: self.resetApp())
 		self.actionExit.triggered.connect(lambda: self.close())
 
-		self.actionExtractSelected.triggered.connect(lambda: self.extractItems(False))
-		self.actionExtractAll.triggered.connect(lambda: self.extractItems(True))
+		self.extractSelected.clicked.connect(lambda: self.extractItems(False))
+		self.extractAll.clicked.connect(lambda: self.extractItems(True))
 
 	# workers
 	@pyqtSlot(list)
 	def progressBarSlot(self, progress):
 		if progress[0] == "total":
-			self.progress.setValue(progress[1])
+			self.totalProgress.setValue(progress[1])
 		elif progress[0] == "task":
-			self.taskProgress.setValue(progress[1])
+			self.fileProgress.setValue(progress[1])
 
 	@pyqtSlot(dict)
 	def handleFinished(self, data):
@@ -119,6 +131,19 @@ class AnimeWwise(QMainWindow):
 			self.tabs.setTabEnabled(1, True)
 			self.tabs.setTabEnabled(2, True)
 			self.tabs.setCurrentIndex(1)
+		if data["action"] == "error":
+			QMessageBox.warning(None, "Warning", data["content"]["msg"], QMessageBox.Ok)
+			state = data["content"]["state"]
+			if state == 1:
+				self.tabs.setTabEnabled(0, True)
+			elif state == 2:
+				self.tabs.setTabEnabled(1, True)
+				self.tabs.setTabEnabled(2, True)
+		if data["action"] == "extract":
+			self.tabs.setTabEnabled(1, True)
+			self.tabs.setTabEnabled(2, True)
+			self.tabs.setCurrentIndex(2)
+			print("Finished extracting everything !")
 
 	# page 1 - config
 	def loadFiles(self):
@@ -192,22 +217,29 @@ class AnimeWwise(QMainWindow):
 
 	# page 3 - extraction
 	def extractItems(self, _all):
+		if self.folders["output"] == "":
+			QMessageBox.warning(None, "Warning", "Missing output folder !", QMessageBox.Ok)
+			return
+
 		checked_items = []
 	
 		def check_items(item, _all):
 			if item.checkState(0) == Qt.Checked or _all:
-				checked_items.append([item.text(column) for column in range(item.columnCount())])
+				if item.text(1) != "":
+					checked_items.append(self.getFileMeta(item))
 			for i in range(item.childCount()):
 				check_items(item.child(i), _all)
 		
 		for i in range(self.treeWidget.topLevelItemCount()):
 			check_items(self.treeWidget.topLevelItem(i), _all)
-		
-		print(checked_items)
+
+		self.tabs.setTabEnabled(1, False)
+		self.tabs.setTabEnabled(2, False)
+		self.tabs.setCurrentIndex(2)
 
 		# yet another block of threading bs
 		self.backgroundThread = QThread()
-		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.folders["input"], "files": checked_items})
+		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.folders["input"], "files": checked_items, "format": "wem", "output": self.folders["output"]})
 		self.backgroundWorker.moveToThread(self.backgroundThread)
 		self.backgroundThread.started.connect(self.backgroundWorker.run)
 		self.backgroundWorker.finished.connect(self.handleFinished)
@@ -218,6 +250,22 @@ class AnimeWwise(QMainWindow):
 		self.backgroundWorker.progress.connect(self.progressBarSlot)
 		self.backgroundThread.start()
 
+	def getFileMeta(self, item):
+		path = []
+		current_item = item
+
+		while current_item is not None:
+			path.insert(0, current_item.text(0))
+			current_item = current_item.parent()
+		
+		return {
+			"name": item.text(0),
+			"path": path[1:-1],
+			"source": path[0],
+			"offset": int(item.text(1), 16),
+			"size": int(item.text(2))
+		}
+
 	# misc
 	def resetApp(self):
 		self.resetTreeWidget()
@@ -225,6 +273,7 @@ class AnimeWwise(QMainWindow):
 		self.tabs.setTabEnabled(0, True)
 		self.tabs.setTabEnabled(1, False)
 		self.tabs.setTabEnabled(2, False)
+		print("Reset !")
 
 	def _appendText(self, text):
 		cursor = self.console.textCursor()

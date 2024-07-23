@@ -29,8 +29,6 @@ skips = "000000000" # used for debugging
 
 class WwiseExtract:
 	def __init__(self):
-		# self.map = _map
-		# self.format = _format
 
 		self.paths = {
 			"input": "",
@@ -40,8 +38,6 @@ class WwiseExtract:
 		}
 
 		self.allocator = Allocator()
-
-		# self.progress = progress
 
 	def path(self, base, path):
 		base_path = self.paths[base]
@@ -307,7 +303,6 @@ class WwiseExtract:
 		print("-"*30)
 		print("Done extracting everything !")
 
-
 	### loading files ###
 
 	def load_folder(self, _map, path):
@@ -317,6 +312,9 @@ class WwiseExtract:
 		self.file_structure = {"folders": {}, "files": []}
 
 		files = [f for f in os.listdir(path) if f.endswith(".pck")]
+
+		if len(files) == 0:
+			return None
 
 		for file in files:
 			self.load_file(os.path.join(path, file))
@@ -370,11 +368,28 @@ class WwiseExtract:
 
 	### extracting files ###
 
-	def extract_files(self, _input):
-		# load all pck, then extract each file and apply conversion if required
-		# allocator.load_file(os.path.join(_input, "2050.pck"))
-		# allocator.read_at("2050.pck", 0, 0)
-		pass
+	def extract_files(self, _input, files, output, format, progress):
+		all_sources = list(set([e["source"] for e in files]))
+		
+		for source in all_sources:
+			self.allocator.load_file(os.path.join(_input, source))
+
+		pos = 0
+		for file in files:
+			pos += 1
+			progress(["total", pos * 100 // len(files)])
+
+			data = self.allocator.read_at(file["source"], file["offset"], file["size"])
+			filepath = os.path.join("/".join(file["path"]), file["name"])
+			fullpath = os.path.join(output, filepath)
+			os.makedirs(os.path.dirname(fullpath), exist_ok=True)
+			with open(fullpath, "wb") as f:
+				f.write(data)
+				f.close()
+
+		self.allocator.free_mem()
+		os.startfile(output)
+		
 	### other ###
 
 	def reset(self):

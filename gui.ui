@@ -293,23 +293,23 @@
            </item>
           </layout>
          </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="extractLayout">
          <item>
-          <layout class="QHBoxLayout" name="extractLayout">
-           <item>
-            <widget class="QPushButton" name="extractAll">
-             <property name="text">
-              <string>Extract All</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="extractSelected">
-             <property name="text">
-              <string>Extract Selected</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QPushButton" name="extractAll">
+           <property name="text">
+            <string>Extract All</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="extractSelected">
+           <property name="text">
+            <string>Extract Selected</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -360,18 +360,7 @@
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
-   <widget class="QMenu" name="menuExtract">
-    <property name="enabled">
-     <bool>true</bool>
-    </property>
-    <property name="title">
-     <string>Extract</string>
-    </property>
-    <addaction name="actionExtractAll"/>
-    <addaction name="actionExtractSelected"/>
-   </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuExtract"/>
   </widget>
   <action name="actionnot_working_here_yet">
    <property name="text">
