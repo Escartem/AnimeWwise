@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import time
+import math
 import mapper
 import extract
 from PyQt5 import uic
@@ -118,9 +119,9 @@ class AnimeWwise(QMainWindow):
 	@pyqtSlot(list)
 	def progressBarSlot(self, progress):
 		if progress[0] == "total":
-			self.totalProgress.setValue(progress[1])
+			self.totalProgress.setValue(math.ceil(progress[1]))
 		elif progress[0] == "file":
-			self.fileProgress.setValue(progress[1])
+			self.fileProgress.setValue(math.ceil(progress[1]))
 
 	@pyqtSlot(dict)
 	def handleFinished(self, data):

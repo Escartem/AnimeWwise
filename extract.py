@@ -2,14 +2,14 @@ import os
 import io
 import sys
 import time
-from mapper import Mapper
 import shutil
 import filecmp
 import tempfile
 import wavescan
 import subprocess
-from filereader import FileReader
+from mapper import Mapper
 from allocator import Allocator
+from filereader import FileReader
 
 cwd = os.getcwd()
 path = lambda path: os.path.join(cwd, path)
@@ -370,6 +370,13 @@ class WwiseExtract:
 
 	def extract_files(self, _input, files, output, _format, progress):
 		temp_dir = tempfile.TemporaryDirectory()
+		self.progress = progress
+		self.steps = {
+			"wem": 1,
+			"wav": 2,
+			"mp3": 3,
+			"ogg": 3
+		}[_format]
 
 		# wem
 		if _format == "wem":
@@ -377,7 +384,7 @@ class WwiseExtract:
 		else:
 			output_folder = os.path.join(temp_dir.name, "wem")
 
-		self.extract_wem(_input, files, output_folder, progress)
+		self.extract_wem(_input, files, output_folder)
 
 		if _format == "wem":
 			temp_dir.cleanup()
@@ -392,7 +399,7 @@ class WwiseExtract:
 		else:
 			output_folder = os.path.join(temp_dir.name, "wav")
 
-		self.extract_wav(new_input, files, output_folder, progress)
+		self.extract_wav(new_input, files, output_folder)
 
 		if _format == "wav":
 			temp_dir.cleanup()
@@ -408,7 +415,7 @@ class WwiseExtract:
 		temp_dir.cleanup()
 		return
 
-	def extract_wem(self, _input, files, output, progress):
+	def extract_wem(self, _input, files, output):
 		print(": Extracting audio as wem")
 		all_sources = list(set([e["source"] for e in files]))
 
@@ -418,7 +425,7 @@ class WwiseExtract:
 		pos = 0
 		for file in files:
 			pos += 1
-			progress(["file", pos * 100 // len(files)])
+			self.update_progress(pos, len(files), 1)
 
 			data = self.allocator.read_at(file["source"], file["offset"], file["size"])
 			
@@ -432,12 +439,12 @@ class WwiseExtract:
 
 		self.allocator.free_mem()
 
-	def extract_wav(self, _input, files, output, progress):
+	def extract_wav(self, _input, files, output):
 		print(": Converting audio to wav")
 		pos = 0
 		for file in files:
 			pos += 1
-			progress(["file", pos * 100 // len(files)])
+			self.update_progress(pos, len(files), 2)
 
 			filename = f'{os.path.basename(file).split(".")[0]}.wav'
 			filepath = os.path.join(output, os.path.dirname(file), filename)
@@ -485,6 +492,11 @@ class WwiseExtract:
 			call(args)
 		
 	### other ###
+
+	def update_progress(self, current, total, step):
+		base = 100 / self.steps
+		self.progress(["total", current * base // total + base * (step - 1)])
+		self.progress(["file", current * 100 // total])
 
 	def reset(self):
 		if self.mapper is not None:
