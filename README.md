@@ -35,6 +35,10 @@ An easy to use tool to extract audio from some anime games, with the original fi
 
 I know there is already dozens of tools that have the exact same purpose, being to extract audio from games or hoyo games, however, I made this anyway because of one functionality that others don't possess, which is file name recovery using mappings, because extracting is cool but browsing thousands of files with no names is just a pain, every single voiceline is a unique file. And I'm also planning a second unique functionality being a lookup tool, giving the user the ability to see every file inside the game, search the ones he needs and then extract them automatically, instead of having to load files and see what's in them. Stay tuned for that one :3
 
+# Performance
+
+The program has been tested and proved to be very efficient with extraction (not conversion), I've loaded the entire english package from genshin at 4.8 (around 17gb) and it took around 15 seconds to load and map every single of the ~100k files inside. And upon extracting them to .wem, it took around 10 seconds as well and during the entire process the program did not exceeded 500mb or so of ram usage. So I would say that it si good enough, however conversion is much slower, especially with ffmpeg (mp3 & ogg), some tweaks may be required to improve the speed.
+
 # Contribute
 
 Feel free to contribute to this project as much as you want, a share would be very appreciated aswell, I'll be glad to know if this helped anyone <3
