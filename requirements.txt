@@ -1,2 +1,2 @@
-halo==0.0.31
-progress==1.6
+PyQt5==5.15.11
+PyQt5_sip==12.15.0

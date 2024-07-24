@@ -1,7 +1,6 @@
 # Custom rewrite of the Wwise AKPK packages extractor, original by Nicknine and bnnm
-from filereader import FileReader
-import traceback
 import os
+import traceback
 
 
 reader = None

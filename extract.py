@@ -1,9 +1,5 @@
 import os
 import io
-import sys
-import time
-import shutil
-import filecmp
 import tempfile
 import wavescan
 import subprocess

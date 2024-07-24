@@ -1,7 +1,5 @@
 # reader for the .map format i've made to improve reading speed and mapping size
 from filereader import FileReader
-import os
-import json
 
 
 class Mapper:

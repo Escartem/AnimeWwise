@@ -1,14 +1,12 @@
 import os
 import sys
 import json
-import time
 import math
-import mapper
 import extract
 from PyQt5 import uic
-from PyQt5.QtGui import QTextCursor, QStandardItemModel, QStandardItem
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView, QAbstractItemView, QTreeWidgetItem
+from PyQt5.QtGui import QTextCursor
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMetaType, Qt
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView, QAbstractItemView, QTreeWidgetItem
 
 QMetaType.type("QTextCursor")
 

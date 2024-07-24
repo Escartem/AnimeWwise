@@ -256,6 +256,13 @@
         </layout>
        </item>
        <item>
+        <widget class="Line" name="separatorC">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
         <layout class="QVBoxLayout" name="progressWrapperLayout">
          <item>
           <layout class="QHBoxLayout" name="totalProgressLayout">
@@ -294,6 +301,13 @@
           </layout>
          </item>
         </layout>
+       </item>
+       <item>
+        <widget class="Line" name="separatorD">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="extractLayout">
