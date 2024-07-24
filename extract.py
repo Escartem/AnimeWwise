@@ -398,8 +398,15 @@ class WwiseExtract:
 			temp_dir.cleanup()
 			return
 
+		# mp3 & ogg
+		files = [os.path.join(os.path.dirname(file), f'{os.path.basename(file).split(".")[0]}.wav') for file in files]
 		new_input = output_folder
-		# TODO: add mp3 and ogg
+		output_folder = output
+
+		self.extract_ffmpeg(new_input, files, output_folder, _format)
+
+		temp_dir.cleanup()
+		return
 
 	def extract_wem(self, _input, files, output, progress):
 		print(": Extracting audio as wem")
@@ -441,6 +448,38 @@ class WwiseExtract:
 				"-o",
 				filepath,
 				os.path.join(_input, file)
+			]
+
+			call(args)
+
+	def extract_ffmpeg(self, _input, files, output, _format):
+		print(f": Converting audio to {_format}")
+
+		encoders = {
+			"mp3": "libmp3lame",
+			"ogg": "libvorbis"
+		}
+		
+		encoder = encoders[_format]
+
+		pos = 0
+		for file in files:
+			pos += 1
+			self.update_progress(pos, len(files), 3)
+
+			filename = f'{os.path.basename(file).split(".")[0]}.{_format}'
+			filepath = os.path.join(output, os.path.dirname(file), filename)
+			os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+			args = [
+				path("tools/ffmpeg/ffmpeg.exe"),
+				"-i",
+				os.path.join(_input, file),
+				"-acodec",
+				encoder,
+				"-b:a",
+				"192k", # 192|4
+				filepath
 			]
 
 			call(args)
