@@ -25,7 +25,9 @@ class WwiseExtract:
 		self.file_structure = {"folders": {}, "files": []}
 
 		files = [f for f in os.listdir(folder_path) if f.endswith(".pck")]
-		hdiff_files = [f for f in os.listdir(diff_path) if f.endswith(".pck.hdiff")]
+		hdiff_files = []
+		if diff_path != "":
+			hdiff_files = [f for f in os.listdir(diff_path) if f.endswith(".pck.hdiff")]
 
 		if len(files) == 0:
 			return None
@@ -302,5 +304,6 @@ class WwiseExtract:
 		if self.mapper is not None:
 			self.mapper.reset()
 		self.allocator.free_mem()
-		self.hdiff_dir.cleanup()
-		self.hdiff_dir = None
+		if self.hdiff_dir is not None:
+			self.hdiff_dir.cleanup()
+			self.hdiff_dir = None
