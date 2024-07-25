@@ -8,7 +8,7 @@ from allocator import Allocator
 from filereader import FileReader
 
 cwd = os.getcwd()
-path = lambda path: os.path.join(cwd, path)
+path = lambda base, path: os.path.join(base, path)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 # TODO: handle hdiff, helper :
@@ -25,7 +25,7 @@ class WwiseExtract:
 	def load_folder(self, _map, path):
 		self.mapper = None
 		if _map is not None:
-			self.mapper = Mapper(os.path.join(os.getcwd(), f"maps/{_map}"))
+			self.mapper = Mapper(path(cwd, f"maps/{_map}"))
 		self.file_structure = {"folders": {}, "files": []}
 
 		files = [f for f in os.listdir(path) if f.endswith(".pck")]
@@ -99,7 +99,7 @@ class WwiseExtract:
 		if _format == "wem":
 			output_folder = output
 		else:
-			output_folder = os.path.join(temp_dir.name, "wem")
+			output_folder = path(temp_dir.name, "wem")
 
 		self.extract_wem(_input, files, output_folder)
 
@@ -109,12 +109,12 @@ class WwiseExtract:
 
 		# wav
 		new_input = output_folder
-		files = [os.path.join("/".join(file["path"]), file["name"]) for file in files]
+		files = [path("/".join(file["path"]), file["name"]) for file in files]
 
 		if _format == "wav":
 			output_folder = output
 		else:
-			output_folder = os.path.join(temp_dir.name, "wav")
+			output_folder = path(temp_dir.name, "wav")
 
 		self.extract_wav(new_input, files, output_folder)
 
@@ -123,7 +123,7 @@ class WwiseExtract:
 			return
 
 		# mp3 & ogg
-		files = [os.path.join(os.path.dirname(file), f'{os.path.basename(file).split(".")[0]}.wav') for file in files]
+		files = [path(os.path.dirname(file), f'{os.path.basename(file).split(".")[0]}.wav') for file in files]
 		new_input = output_folder
 		output_folder = output
 
@@ -146,8 +146,8 @@ class WwiseExtract:
 
 			data = self.allocator.read_at(file["source"], file["offset"], file["size"])
 			
-			filepath = os.path.join("/".join(file["path"]), file["name"])
-			fullpath = os.path.join(output, filepath)
+			filepath = path("/".join(file["path"]), file["name"])
+			fullpath = path(output, filepath)
 			os.makedirs(os.path.dirname(fullpath), exist_ok=True)
 			
 			with open(fullpath, "wb") as f:
@@ -164,14 +164,14 @@ class WwiseExtract:
 			self.update_progress(pos, len(files), 2)
 
 			filename = f'{os.path.basename(file).split(".")[0]}.wav'
-			filepath = os.path.join(output, os.path.dirname(file), filename)
+			filepath = path(output, os.path.dirname(file), filename)
 			os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
 			args = [
-				path("tools/vgmstream/vgmstream-cli.exe"),
+				path(cwd, "tools/vgmstream/vgmstream-cli.exe"),
 				"-o",
 				filepath,
-				os.path.join(_input, file)
+				path(_input, file)
 			]
 
 			call(args)
@@ -192,13 +192,13 @@ class WwiseExtract:
 			self.update_progress(pos, len(files), 3)
 
 			filename = f'{os.path.basename(file).split(".")[0]}.{_format}'
-			filepath = os.path.join(output, os.path.dirname(file), filename)
+			filepath = path(output, os.path.dirname(file), filename)
 			os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
 			args = [
-				path("tools/ffmpeg/ffmpeg.exe"),
+				path(cwd, "tools/ffmpeg/ffmpeg.exe"),
 				"-i",
-				os.path.join(_input, file),
+				path(_input, file),
 				"-acodec",
 				encoder,
 				"-b:a",
