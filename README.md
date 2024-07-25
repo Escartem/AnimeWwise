@@ -15,10 +15,9 @@ An easy to use tool to extract audio from some anime games, with the original fi
 ![image](https://github.com/user-attachments/assets/72cf7983-00d0-4e98-b0d0-8b5547057a56)
 > [!TIP] 
 > The audio folder can be found in the following locations
-> - `Genshin Impact\Genshin Impact Game\GenshinImpact_Data\StreamingAssets\AudioAsset\...`
-> - `Star Rail... `
-> - `Zenless Zone Zero...`
-> - (will add later)
+> - `GenshinImpact_Data\StreamingAssets\AudioAsset\...`
+> - `Star Rail_Data\Persistent\Audio\AudioPackage\Windows\... `
+> - `ZenlessZoneZero_Data\StreamingAssets\Audio\Windows\Full\...`
 5. Select your hdiff folder if needed
 > [!NOTE]
 > Diff files are `.hdiff` present in the update patches of the games. If you want to extract an hdiff content, you must have the pck file with the *same name before patch* in the input folder, pck's that do not have a corresponding hdiff file will be extracted normally, when they do have a corresponding hdiff file, *only the hdiff file content is extracted* and not the full pck
