@@ -6,13 +6,16 @@ import traceback
 reader = None
 bank_version = 0
 wwise_data = []
+filename = ""
 
 
-def get_data(_reader):
+def get_data(_reader, _filename):
 	global wwise_data
 	global bank_version
 	global reader
+	global filename
 
+	filename = _filename
 	wwise_data = []
 	reader = _reader
 
@@ -209,4 +212,4 @@ def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_
 			continue
 
 		# file infos
-		wwise_data.append([os.path.basename(name), offset, size])
+		wwise_data.append([os.path.basename(name), offset, size, filename])

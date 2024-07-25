@@ -18,7 +18,7 @@ class WwiseExtract:
 
 	### loading files ###
 
-	def load_folder(self, _map, folder_path, diff_path):
+	def load_folder(self, _map, folder_path, diff_path, progress):
 		self.mapper = None
 		if _map is not None:
 			self.mapper = Mapper(path(cwd, f"maps/{_map}"))
@@ -32,7 +32,12 @@ class WwiseExtract:
 		if len(files) == 0:
 			return None
 
+		pos = 0
+		print(f"\nLoading {len(files)} files...")
 		for file in files:
+			pos += 1
+			progress(["load", pos * 100 // len(files)])
+
 			hdiff = None
 			if f"{file}.hdiff" in hdiff_files:
 				hdiff = path(diff_path, hdiff_files[hdiff_files.index(f"{file}.hdiff")])
@@ -48,7 +53,7 @@ class WwiseExtract:
 
 	def get_wems(self, data, filename, hdiff):
 		reader = FileReader(io.BytesIO(data), "little")
-		files = wavescan.get_data(reader)
+		files = wavescan.get_data(reader, filename)
 		if hdiff is not None:
 			with open(hdiff, "rb") as f:
 				hdiff_data = f.read()
@@ -96,13 +101,14 @@ class WwiseExtract:
 			f.close()
 
 		reader = FileReader(io.BytesIO(data), "little")
-		files = wavescan.get_data(reader)
+		files = wavescan.get_data(reader, source_name)
 
 		working_dir.cleanup()
 
 		return files
 	
-	def map_names(self, files, filename, hdiff=False):
+	def map_names(self, files, filename, hdiff=False, skip_source=True):
+		# disable skip source if required
 		mapper = self.mapper
 		base = self.file_structure
 
@@ -123,12 +129,19 @@ class WwiseExtract:
 						key[0] = f"new_files\\{key[0]}"
 					else:
 						key[0] = f"changed_files\\{key[0]}"
-				self.add_to_structure(f"{filename}\\{key[0]}.wem".split("\\"), [file[1], file[2]])
+
+				parts = f"{filename}\\{key[0]}.wem".split("\\")
+				if skip_source:
+					parts = parts[1:]
+
+				self.add_to_structure(parts, [file[1], file[2], file[3]])
 			else:
 				temp = base["folders"]
-				if filename not in temp:
-					temp[filename] = {"folders": {}, "files": []}
-				temp = temp[filename]["folders"]
+
+				if not skip_source:
+					if filename not in temp:
+						temp[filename] = {"folders": {}, "files": []}
+					temp = temp[filename]["folders"]
 				
 				if hdiff:
 					if file in old_files[0]:
@@ -157,7 +170,7 @@ class WwiseExtract:
 			current_level = current_level["folders"][part]
 		if "files" not in current_level:
 			current_level["files"] = []
-		current_level["files"].append([parts[-1], meta[0], meta[1]])
+		current_level["files"].append([parts[-1], meta[0], meta[1], meta[2]])
 
 	### extracting files ###
 

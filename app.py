@@ -51,12 +51,12 @@ class BackgroundWorker(QObject):
 	def run(self):
 		if self.action == "load":
 			print("Loading files and mapping if necessary...")
-			fileStructure = self.extract.load_folder(self.map, self.input, self.diff)
+			fileStructure = self.extract.load_folder(self.map, self.input, self.diff, progress=self.progress.emit)
 			if fileStructure is None:
 				self.finished.emit({"action": "error", "content": {"msg": "Nothing found !", "state": 1}})
 				print("Nothing found !")
 				return
-			print("Done !")
+			print("Building file structure...")
 			self.finished.emit({"action": "load", "content": fileStructure})
 		if self.action == "extract":
 			if len(self.files) == 0:
@@ -117,6 +117,8 @@ class AnimeWwise(QMainWindow):
 	# workers
 	@pyqtSlot(list)
 	def progressBarSlot(self, progress):
+		if progress[0] == "load":
+			self.loadProgress.setValue(math.ceil(progress[1]))
 		if progress[0] == "total":
 			self.totalProgress.setValue(math.ceil(progress[1]))
 		elif progress[0] == "file":
@@ -131,6 +133,7 @@ class AnimeWwise(QMainWindow):
 			self.tabs.setTabEnabled(1, True)
 			self.tabs.setTabEnabled(2, True)
 			self.tabs.setCurrentIndex(1)
+			print("Done !")
 		if data["action"] == "error":
 			QMessageBox.warning(None, "Warning", data["content"]["msg"], QMessageBox.Ok)
 			state = data["content"]["state"]
@@ -182,7 +185,7 @@ class AnimeWwise(QMainWindow):
 	def updateTreeWidget(self):
 		self.treeWidget.clear()
 		self.treeWidget.setColumnCount(3)
-		self.treeWidget.setHeaderLabels(["Name", "Offset", "Size"])
+		self.treeWidget.setHeaderLabels(["Name", "Offset", "Size", "Source"])
 		
 		self.addItems(None, self.fileStructure)
 
@@ -198,7 +201,7 @@ class AnimeWwise(QMainWindow):
 	def addItems(self, parent, element):
 		for folder_name in sorted(element.get("folders", {}).keys()):
 			folder_content = element["folders"][folder_name]
-			folder_item = QTreeWidgetItem([folder_name, "", ""])
+			folder_item = QTreeWidgetItem([folder_name, "", "", ""])
 			folder_item.setFlags(folder_item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
 			folder_item.setCheckState(0, Qt.Unchecked)
 			if parent is None:
@@ -208,7 +211,7 @@ class AnimeWwise(QMainWindow):
 			self.addItems(folder_item, folder_content)
 
 		for file in sorted(element.get("files", [])):
-			file_item = QTreeWidgetItem([str(file[0]), str(hex(file[1])), str(file[2])])
+			file_item = QTreeWidgetItem([str(file[0]), str(hex(file[1])), str(file[2]), str(file[3])])
 			file_item.setFlags(file_item.flags() | Qt.ItemIsUserCheckable)
 			file_item.setCheckState(0, Qt.Unchecked)
 			if parent is None:
@@ -262,7 +265,7 @@ class AnimeWwise(QMainWindow):
 		return {
 			"name": item.text(0),
 			"path": path[1:-1],
-			"source": path[0],
+			"source": item.text(3),
 			"offset": int(item.text(1), 16),
 			"size": int(item.text(2))
 		}

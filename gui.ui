@@ -166,11 +166,36 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="loadFilesButton">
-         <property name="text">
-          <string>Load file(s)</string>
-         </property>
-        </widget>
+        <layout class="QVBoxLayout" name="loadLayout">
+         <item>
+          <widget class="QPushButton" name="loadFilesButton">
+           <property name="text">
+            <string>Load file(s)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="loadProgressLayout">
+           <item>
+            <widget class="QLabel" name="loadLabel">
+             <property name="text">
+              <string>Progress</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QProgressBar" name="loadProgress">
+             <property name="value">
+              <number>0</number>
+             </property>
+             <property name="invertedAppearance">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -407,7 +432,6 @@
   <tabstop>changeInput</tabstop>
   <tabstop>altInputPath</tabstop>
   <tabstop>changeAltInput</tabstop>
-  <tabstop>loadFilesButton</tabstop>
   <tabstop>tabs</tabstop>
  </tabstops>
  <resources/>
