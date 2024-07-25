@@ -11,60 +11,134 @@ cwd = os.getcwd()
 path = lambda base, path: os.path.join(base, path)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
-# TODO: handle hdiff, helper :
-# hpathz.exe -f original.pck patch.hdiff output.pck
-# diff = filecmp.dircmp(original, patched)
-# new_files, changed_files = diff.right_only, diff.diff_files
-
 class WwiseExtract:
 	def __init__(self):
 		self.allocator = Allocator()
+		self.hdiff_dir = None
 
 	### loading files ###
 
-	def load_folder(self, _map, path):
+	def load_folder(self, _map, folder_path, diff_path):
 		self.mapper = None
 		if _map is not None:
 			self.mapper = Mapper(path(cwd, f"maps/{_map}"))
 		self.file_structure = {"folders": {}, "files": []}
 
-		files = [f for f in os.listdir(path) if f.endswith(".pck")]
+		files = [f for f in os.listdir(folder_path) if f.endswith(".pck")]
+		hdiff_files = [f for f in os.listdir(diff_path) if f.endswith(".pck.hdiff")]
 
 		if len(files) == 0:
 			return None
 
 		for file in files:
-			self.load_file(os.path.join(path, file))
+			hdiff = None
+			if f"{file}.hdiff" in hdiff_files:
+				hdiff = path(diff_path, hdiff_files[hdiff_files.index(f"{file}.hdiff")])
+			self.load_file(path(folder_path, file), hdiff)
 
 		return self.file_structure
 
-	def load_file(self, _input):
+	def load_file(self, _input, hdiff):
 		with open(_input, "rb") as f:
 			data = f.read()
 			f.close()
-		self.get_wems(data, os.path.basename(_input))
+		self.get_wems(data, os.path.basename(_input), hdiff)
 
-	def get_wems(self, data, filename):
+	def get_wems(self, data, filename, hdiff):
 		reader = FileReader(io.BytesIO(data), "little")
 		files = wavescan.get_data(reader)
-		self.map_names(files, filename)
+		if hdiff is not None:
+			with open(hdiff, "rb") as f:
+				hdiff_data = f.read()
+				f.close()
+			hdiff_files = self.get_hdiff_files(data, hdiff_data, filename)
+			files = self.compare_diff(files, hdiff_files)
+
+		self.map_names(files, filename, hdiff is not None)
+
+	def compare_diff(self, old, new):
+		old_dict = {file[0]:file[2] for file in old}
+		new_files = [file for file in new if file not in list(old_dict.keys())]
+		changed_files = [file for file in new if file in list(old_dict.keys()) and file[2] != old_dict[file[0]]]
+
+		return [new_files, changed_files]
+
+	def get_hdiff_files(self, data, hdiff_data, source_name):
+		working_dir = tempfile.TemporaryDirectory()
+		self.hdiff_dir = tempfile.TemporaryDirectory()
+
+		with open(path(working_dir.name, "source.pck"), "wb") as f:
+			f.write(data)
+			f.close()
+
+		with open(path(working_dir.name, "patch.pck.hdiff"), "wb") as f:
+			f.write(hdiff_data)
+			f.close()
+
+		args = [
+			path(cwd, "tools/hpatchz/hpatchz.exe"),
+			"-f",
+			path(working_dir.name, "source.pck"),
+			path(working_dir.name, "patch.pck.hdiff"),
+			path(working_dir.name, "patch.pck")
+		]
+
+		call(args)
+
+		with open(path(working_dir.name, "patch.pck"), "rb") as f:
+			data = f.read()
+			f.close()
+
+		with open(path(self.hdiff_dir.name, source_name), "wb") as f:
+			f.write(data)
+			f.close()
+
+		reader = FileReader(io.BytesIO(data), "little")
+		files = wavescan.get_data(reader)
+
+		working_dir.cleanup()
+
+		return files
 	
-	def map_names(self, files, filename):
+	def map_names(self, files, filename, hdiff=False):
 		mapper = self.mapper
 		base = self.file_structure
+
+		if hdiff:
+			old_files = files
+			filename = f"{filename} (hdiff)"
+			files = [*files[0], *files[1]]
 
 		for file in files:
 			if mapper is not None:
 				key = mapper.get_key(file[0].split(".")[0])
 			else:
 				key = None
+
 			if key is not None:
+				if hdiff:
+					if file in old_files[0]:
+						key[0] = f"new_files\\{key[0]}"
+					else:
+						key[0] = f"changed_files\\{key[0]}"
 				self.add_to_structure(f"{filename}\\{key[0]}.wem".split("\\"), [file[1], file[2]])
 			else:
 				temp = base["folders"]
 				if filename not in temp:
 					temp[filename] = {"folders": {}, "files": []}
 				temp = temp[filename]["folders"]
+				
+				if hdiff:
+					if file in old_files[0]:
+						if "new_files" not in temp:
+							temp["new_files"] = {"folders": {}, "files": []}
+						temp = temp["new_files"]["folders"]
+
+					if file in old_files[1]:
+						if "changed_files" not in temp:
+							temp["changed_files"] = {"folders": {}, "files": []}
+						temp = temp["changed_files"]["folders"]
+
 				if "unmapped" not in temp:
 					temp["unmapped"] = {"folders": {}, "files": []}
 				temp["unmapped"]["files"].append(file)
@@ -137,13 +211,22 @@ class WwiseExtract:
 		all_sources = list(set([e["source"] for e in files]))
 
 		for source in all_sources:
-			self.allocator.load_file(os.path.join(_input, source))
+			load_path = path(_input, source)
+			if self.hdiff_dir is not None:
+				source = source.split(" (hdiff)")[0]
+				hdiff_path = path(self.hdiff_dir.name, source)
+				
+				if os.path.isfile(hdiff_path):
+					load_path = hdiff_path
+			
+			self.allocator.load_file(load_path)
 
 		pos = 0
 		for file in files:
 			pos += 1
 			self.update_progress(pos, len(files), 1)
 
+			file["source"] = file["source"].split(" (hdiff)")[0]
 			data = self.allocator.read_at(file["source"], file["offset"], file["size"])
 			
 			filepath = path("/".join(file["path"]), file["name"])
@@ -219,3 +302,5 @@ class WwiseExtract:
 		if self.mapper is not None:
 			self.mapper.reset()
 		self.allocator.free_mem()
+		self.hdiff_dir.cleanup()
+		self.hdiff_dir = None
