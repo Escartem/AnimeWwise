@@ -8,7 +8,7 @@ from allocator import Allocator
 from filereader import FileReader
 
 cwd = os.getcwd()
-path = lambda base, path: os.path.join(base, path)
+path = lambda *args: os.path.join(*args)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
 class WwiseExtract:
@@ -72,7 +72,8 @@ class WwiseExtract:
 
 	def get_hdiff_files(self, data, hdiff_data, source_name):
 		working_dir = tempfile.TemporaryDirectory()
-		self.hdiff_dir = tempfile.TemporaryDirectory()
+		if self.hdiff_dir is None:
+			self.hdiff_dir = tempfile.TemporaryDirectory()
 
 		with open(path(working_dir.name, "source.pck"), "wb") as f:
 			f.write(data)
