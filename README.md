@@ -1,6 +1,7 @@
 # AnimeWwise
 An easy to use tool to extract audio from some anime games, with the original filenames and paths.
 
+
 ![image](https://github.com/user-attachments/assets/e66048df-4d71-4bda-8201-1c2c67f44de7)
 
 # Usage
