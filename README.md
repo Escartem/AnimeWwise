@@ -16,7 +16,7 @@ An easy to use tool to extract audio from some anime games, with the original fi
 > [!TIP] 
 > The audio folder can be found in the following locations
 > - `GenshinImpact_Data\StreamingAssets\AudioAsset\...`
-> - `Star Rail_Data\Persistent\Audio\AudioPackage\Windows\... `
+> - `StarRail_Data\Persistent\Audio\AudioPackage\Windows\... `
 > - `ZenlessZoneZero_Data\StreamingAssets\Audio\Windows\Full\...`
 5. Select your hdiff folder if needed
 > [!NOTE]
