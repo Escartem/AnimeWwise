@@ -13,6 +13,9 @@ class Allocator:
 
 		self.files[filename] = mmap_object
 
+	def unload_file(self, name):
+		self.files[name].close()
+
 	def read_at(self, file, offset, size):
 		mmap_object = self.files[file]
 		mmap_object.seek(offset)

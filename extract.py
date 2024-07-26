@@ -226,7 +226,9 @@ class WwiseExtract:
 		print(": Extracting audio as wem")
 		all_sources = list(set([e["source"] for e in files]))
 
+		pos = 0
 		for source in all_sources:
+			# load source
 			load_path = path(_input, source)
 			if self.hdiff_dir is not None:
 				source = source.split(" (hdiff)")[0]
@@ -237,22 +239,26 @@ class WwiseExtract:
 			
 			self.allocator.load_file(load_path)
 
-		pos = 0
-		for file in files:
-			pos += 1
-			self.update_progress(pos, len(files), 1)
+			# extract every file from this one
+			for file in [file for file in files if file["source"] == source]:
+				pos += 1
+				self.update_progress(pos, len(files), 1)
 
-			file["source"] = file["source"].split(" (hdiff)")[0]
-			data = self.allocator.read_at(file["source"], file["offset"], file["size"])
-			
-			filepath = path("/".join(file["path"]), file["name"])
-			fullpath = path(output, filepath)
-			os.makedirs(os.path.dirname(fullpath), exist_ok=True)
-			
-			with open(fullpath, "wb") as f:
-				f.write(data)
-				f.close()
+				file["source"] = file["source"].split(" (hdiff)")[0]
+				data = self.allocator.read_at(file["source"], file["offset"], file["size"])
+				
+				filepath = path("/".join(file["path"]), file["name"])
+				fullpath = path(output, filepath)
+				os.makedirs(os.path.dirname(fullpath), exist_ok=True)
+				
+				with open(fullpath, "wb") as f:
+					f.write(data)
+					f.close()
 
+			# unload source
+			self.allocator.unload_file(source)
+
+		# security
 		self.allocator.free_mem()
 
 	def extract_wav(self, _input, files, output):
