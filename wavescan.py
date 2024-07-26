@@ -1,6 +1,7 @@
 # Custom rewrite of the Wwise AKPK packages extractor, original by Nicknine and bnnm
 import os
 import traceback
+from bnk import bnk2wem
 
 
 reader = None
@@ -212,4 +213,17 @@ def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_
 			continue
 
 		# file infos
-		wwise_data.append([os.path.basename(name), offset, size, filename])
+		if ext == "bnk":
+			# get data from bnk
+			print(offset)
+			pos = reader.GetBufferPos()
+			reader.SetBufferPos(offset)
+			bnk_data = reader.ReadBytes(size)
+			reader.SetBufferPos(pos)
+
+			wems = bnk2wem(bnk_data)
+
+			for wem in wems:
+				wwise_data.append([f"{os.path.basename(name).split('.')[0]}_{wem[0]}.wem", offset+wem[1], wem[2], filename])
+		else:
+			wwise_data.append([os.path.basename(name), offset, size, filename])

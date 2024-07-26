@@ -1,4 +1,5 @@
 output/
+input/
 temp/
 *.pck
 *.hdiff
