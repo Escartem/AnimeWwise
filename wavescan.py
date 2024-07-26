@@ -215,7 +215,6 @@ def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_
 		# file infos
 		if ext == "bnk":
 			# get data from bnk
-			print(offset)
 			pos = reader.GetBufferPos()
 			reader.SetBufferPos(offset)
 			bnk_data = reader.ReadBytes(size)

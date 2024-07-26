@@ -3,7 +3,7 @@ import io
 from filereader import FileReader
 
 def bnk2wem(data):
-	# gets raws data from object
+	# gets raw data from object
 	reader = FileReader(io.BytesIO(data), "little")
 
 	bkhd_signature = reader.ReadBytes(4)
@@ -30,7 +30,6 @@ def bnk2wem(data):
 		wem_id = reader.ReadUInt32()
 		wem_offset = reader.ReadUInt32()
 		wem_size = reader.ReadUInt32()
-		wem = [wem_id, wem_offset, wem_size]
 		wems.append([wem_id, wem_offset, wem_size])
 
 	data_signature = reader.ReadBytes(4)
