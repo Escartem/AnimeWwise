@@ -114,6 +114,8 @@ class AnimeWwise(QMainWindow):
 		self.extractSelected.clicked.connect(lambda: self.extractItems(False))
 		self.extractAll.clicked.connect(lambda: self.extractItems(True))
 
+		self.searchAsset.textChanged.connect(lambda: self.filterAsset())
+
 	# workers
 	@pyqtSlot(list)
 	def progressBarSlot(self, progress):
@@ -128,7 +130,7 @@ class AnimeWwise(QMainWindow):
 	def handleFinished(self, data):
 		if data["action"] == "load":
 			self.fileStructure = data["content"]
-			self.updateTreeWidget()
+			self.updateTreeWidget(self.fileStructure)
 			self.tabs.setTabEnabled(0, False)
 			self.tabs.setTabEnabled(1, True)
 			self.tabs.setTabEnabled(2, True)
@@ -178,16 +180,36 @@ class AnimeWwise(QMainWindow):
 		self.backgroundThread.start()
 
 	# page 2 - browsing
+	def filterAsset(self):
+		search = self.searchAsset.text()
+		if search == "":
+			self.updateTreeWidget(self.fileStructure)
+			return
+		result = self.searchFiles(self.fileStructure, search)
+		self.updateTreeWidget(result)
+
+	def searchFiles(self, data, substring, current_path=""):
+		result = {"folders": {}, "files": []}
+
+		result["files"] = [file for file in data.get("files", []) if substring in file[0]]
+
+		for folder_name, folder_data in data.get("folders", {}).items():
+			subfolder_result = self.searchFiles(folder_data, substring)
+			if subfolder_result["files"] or subfolder_result["folders"]:
+				result["folders"][folder_name] = subfolder_result
+
+		return result
+
 	def resetTreeWidget(self):
 		self.treeWidget.clear()
 		self.tabs.setTabEnabled(1, False)
 
-	def updateTreeWidget(self):
+	def updateTreeWidget(self, structure):
 		self.treeWidget.clear()
 		self.treeWidget.setColumnCount(3)
 		self.treeWidget.setHeaderLabels(["Name", "Offset", "Size", "Source"])
 		
-		self.addItems(None, self.fileStructure)
+		self.addItems(None, structure)
 
 		self.treeWidget.expandAll()
 		self.treeWidget.header().setSectionResizeMode(0, QHeaderView.Stretch)

@@ -39,7 +39,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="usesScrollButtons">
      <bool>true</bool>
@@ -208,9 +208,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>0</y>
+        <y>20</y>
         <width>1081</width>
-        <height>611</height>
+        <height>591</height>
        </rect>
       </property>
       <property name="columnCount">
@@ -221,6 +221,19 @@
         <string notr="true">1</string>
        </property>
       </column>
+     </widget>
+     <widget class="QLineEdit" name="searchAsset">
+      <property name="geometry">
+       <rect>
+        <x>2</x>
+        <y>1</y>
+        <width>1081</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="placeholderText">
+       <string>Search something...</string>
+      </property>
      </widget>
     </widget>
     <widget class="QWidget" name="extractTab">
