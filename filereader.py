@@ -5,8 +5,7 @@ import struct
 
 class FileReader:
 	""" 
-	Simplified byte file reader with buffer, it's not particularly optimised but good enough
-	In the scope of this project, not everything will be used in here
+	File reader for files, not much too say
 	"""
 
 	def __init__(self, file, endianness:str):
