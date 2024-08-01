@@ -1,10 +1,11 @@
+import io
+import os
 import struct
 
 
 class FileReader:
 	""" 
-	Simplified byte file reader with buffer, it's not particularly optimised but good enough
-	In the scope of this project, not everything will be used in here
+	File reader for files, not much too say
 	"""
 
 	def __init__(self, file, endianness:str):
@@ -60,3 +61,18 @@ class FileReader:
 
 	def SetBufferPos(self, pos:int):
 		self.stream.seek(pos)
+
+	def GetStreamLength(self) -> int:
+		if isinstance(self.stream, io.BytesIO):
+			return self.stream.getbuffer().nbytes
+		elif isinstance(self.stream, io.BufferedReader):
+			pos = self.GetBufferPos()
+			self.stream.seek(0, os.SEEK_END)
+			length = self.GetBufferPos()
+			self.SetBufferPos(pos)
+			return length
+		else:
+			raise Exception("unknown buffer type")
+
+	def GetRemainingLength(self) -> int:
+		return self.GetStreamLength() - self.GetBufferPos()

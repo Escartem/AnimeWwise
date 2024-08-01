@@ -1,337 +1,329 @@
 import os
-import sys
-import mapper
-import shutil
-import filecmp
-import argparse
+import io
+import tempfile
 import wavescan
 import subprocess
-from halo import Halo
-from progress.bar import PixelBar
+from mapper import Mapper
+from allocator import Allocator
+from filereader import FileReader
 
-
-print("Setting up...")
 cwd = os.getcwd()
-path = lambda path: os.path.join(cwd, path)
+path = lambda *args: os.path.join(*args)
 call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-mapper = mapper.Mapper(path("mapping/latest.map"))
-spinner = Halo(text="spinner", spinner={'interval': 100, 'frames': ['◜', '◠', '◝', '◞', '◡', '◟']}, placement="right")
-skips = "000000000" # used for debugging
 
-# 1 - original extract
-# 2 - patch
-# 3 - patch extract
-# 4 - filter files
-# 5 - wem to wav
-# 6 - wav to mp3
-# 7 - map names
-# 8 - clean up
-# 9 - temp clean up
+class WwiseExtract:
+	def __init__(self):
+		self.allocator = Allocator()
+		self.hdiff_dir = None
 
-def main():
-	parser = argparse.ArgumentParser()
-	# TODO: add skip / select mapping option
-	parser.add_argument("--format", nargs="?", type=str, default="mp3", help="Output audio format, can be either mp3 or ogg")
-	args = parser.parse_args()
+	### loading files ###
 
-	formats = ["mp3", "ogg"]
-	audio_format = "mp3"
-	if args.format in formats:
-		audio_format = args.format
+	def load_folder(self, _map, folder_path, diff_path, progress):
+		self.mapper = None
+		if _map is not None:
+			self.mapper = Mapper(path(cwd, f"maps/{_map}"))
+		self.file_structure = {"folders": {}, "files": []}
 
-	print(f'Format: {audio_format}')
+		files = [f for f in os.listdir(folder_path) if f.endswith(".pck")]
+		hdiff_files = []
+		if diff_path != "":
+			hdiff_files = [f for f in os.listdir(diff_path) if f.endswith(".pck.hdiff")]
 
-	# Initial cleanup
-	if os.path.exists("temp") and skips[8] != "1":
-		shutil.rmtree("temp")
+		if len(files) == 0:
+			return None
 
-	if os.path.exists("output") and len(os.listdir("output")) > 0:
-		print("The output folder needs to be cleared, continue ? [Y/N]")
-		select = input(">")
-		if select.lower() == "y":
-			shutil.rmtree("output")
+		pos = 0
+		print(f"\nLoading {len(files)} files...")
+		for file in files:
+			pos += 1
+			progress(["load", pos * 100 // len(files)])
+
+			hdiff = None
+			if f"{file}.hdiff" in hdiff_files:
+				hdiff = path(diff_path, hdiff_files[hdiff_files.index(f"{file}.hdiff")])
+			self.load_file(path(folder_path, file), hdiff)
+
+		return self.file_structure
+
+	def load_file(self, _input, hdiff):
+		with open(_input, "rb") as f:
+			data = f.read()
+			f.close()
+		self.get_wems(data, os.path.basename(_input), hdiff)
+
+	def get_wems(self, data, filename, hdiff):
+		reader = FileReader(io.BytesIO(data), "little")
+		files = wavescan.get_data(reader, filename)
+		if hdiff is not None:
+			with open(hdiff, "rb") as f:
+				hdiff_data = f.read()
+				f.close()
+			hdiff_files = self.get_hdiff_files(data, hdiff_data, filename)
+			files = self.compare_diff(files, hdiff_files)
+
+		self.map_names(files, filename, hdiff is not None)
+
+	def compare_diff(self, old, new):
+		old_dict = {file[0]:file[2] for file in old}
+		new_files = [file for file in new if file not in list(old_dict.keys())]
+		changed_files = [file for file in new if file in list(old_dict.keys()) and file[2] != old_dict[file[0]]]
+
+		return [new_files, changed_files]
+
+	def get_hdiff_files(self, data, hdiff_data, source_name):
+		working_dir = tempfile.TemporaryDirectory()
+		if self.hdiff_dir is None:
+			self.hdiff_dir = tempfile.TemporaryDirectory()
+
+		with open(path(working_dir.name, "source.pck"), "wb") as f:
+			f.write(data)
+			f.close()
+
+		with open(path(working_dir.name, "patch.pck.hdiff"), "wb") as f:
+			f.write(hdiff_data)
+			f.close()
+
+		args = [
+			path(cwd, "tools/hpatchz/hpatchz.exe"),
+			"-f",
+			path(working_dir.name, "source.pck"),
+			path(working_dir.name, "patch.pck.hdiff"),
+			path(working_dir.name, "patch.pck")
+		]
+
+		call(args)
+
+		with open(path(working_dir.name, "patch.pck"), "rb") as f:
+			data = f.read()
+			f.close()
+
+		with open(path(self.hdiff_dir.name, source_name), "wb") as f:
+			f.write(data)
+			f.close()
+
+		reader = FileReader(io.BytesIO(data), "little")
+		files = wavescan.get_data(reader, source_name)
+
+		working_dir.cleanup()
+
+		return files
+	
+	def map_names(self, files, filename, hdiff=False, skip_source=True):
+		# disable skip source if required
+		mapper = self.mapper
+		base = self.file_structure
+
+		if hdiff:
+			old_files = files
+			filename = f"{filename} (hdiff)"
+			files = [*files[0], *files[1]]
+
+		for file in files:
+			if mapper is not None:
+				key = mapper.get_key(file[0].split(".")[0])
+			else:
+				key = None
+
+			if key is not None:
+				if hdiff:
+					if file in old_files[0]:
+						key[0] = f"new_files\\{key[0]}"
+					else:
+						key[0] = f"changed_files\\{key[0]}"
+
+				parts = f"{filename}\\{key[0]}.wem".split("\\")
+				if skip_source:
+					parts = parts[1:]
+
+				self.add_to_structure(parts, [file[1], file[2], file[3]])
+			else:
+				temp = base["folders"]
+
+				if not skip_source:
+					if filename not in temp:
+						temp[filename] = {"folders": {}, "files": []}
+					temp = temp[filename]["folders"]
+				
+				if hdiff:
+					if file in old_files[0]:
+						if "new_files" not in temp:
+							temp["new_files"] = {"folders": {}, "files": []}
+						temp = temp["new_files"]["folders"]
+
+					if file in old_files[1]:
+						if "changed_files" not in temp:
+							temp["changed_files"] = {"folders": {}, "files": []}
+						temp = temp["changed_files"]["folders"]
+
+				if "unmapped" not in temp:
+					temp["unmapped"] = {"folders": {}, "files": []}
+				temp["unmapped"]["files"].append(file)
+
+		self.file_structure = base
+
+	def add_to_structure(self, parts, meta):
+		current_level = self.file_structure
+		for part in parts[:-1]:
+			if "folders" not in current_level:
+				current_level["folders"] = {}
+			if part not in current_level["folders"]:
+				current_level["folders"][part] = {"folders": {}, "files": []}
+			current_level = current_level["folders"][part]
+		if "files" not in current_level:
+			current_level["files"] = []
+		current_level["files"].append([parts[-1], meta[0], meta[1], meta[2]])
+
+	### extracting files ###
+
+	def extract_files(self, _input, files, output, _format, progress):
+		temp_dir = tempfile.TemporaryDirectory()
+		self.progress = progress
+		self.steps = {
+			"wem": 1,
+			"wav": 2,
+			"mp3": 3,
+			"ogg": 3
+		}[_format]
+
+		# wem
+		if _format == "wem":
+			output_folder = output
 		else:
-			print("Aborting")
-			exit()
+			output_folder = path(temp_dir.name, "wem")
 
-	# Get all files to process
-	hdiff_files = [f for f in os.listdir("audio") if f.endswith(".pck") and os.path.exists(f"patch/{f}.hdiff")]
-	alone_files = [f for f in os.listdir("audio") if f.endswith(".pck") and not os.path.exists(f"patch/{f}.hdiff")]
-	files = [*hdiff_files, *alone_files]
+		self.extract_wem(_input, files, output_folder)
 
-	if len(files) == 0:
-		print("No files found !")
+		if _format == "wem":
+			temp_dir.cleanup()
+			return
+
+		# wav
+		new_input = output_folder
+		files = [path("/".join(file["path"]), file["name"]) for file in files]
+
+		if _format == "wav":
+			output_folder = output
+		else:
+			output_folder = path(temp_dir.name, "wav")
+
+		self.extract_wav(new_input, files, output_folder)
+
+		if _format == "wav":
+			temp_dir.cleanup()
+			return
+
+		# mp3 & ogg
+		files = [path(os.path.dirname(file), f'{os.path.basename(file).split(".")[0]}.wav') for file in files]
+		new_input = output_folder
+		output_folder = output
+
+		self.extract_ffmpeg(new_input, files, output_folder, _format)
+
+		temp_dir.cleanup()
 		return
 
-	print(f"{len(files)} file{'s' if len(files) != 1 else ''} to extract")
-	iteration = 0
+	def extract_wem(self, _input, files, output):
+		print(": Extracting audio as wem")
+		all_sources = list(set([e["source"] for e in files]))
 
-	for file in files:
-		try:
-			iteration += 1
-			filename = file
-			if file in hdiff_files:
-				filename = f"{file.split('.')[0]}.hdiff.pck"
-			print(f"--- {filename} ({iteration}/{len(files)}) ---")
+		pos = 0
+		for source in all_sources:
+			# load source
+			load_path = path(_input, source)
+			if self.hdiff_dir is not None:
+				source = source.split(" (hdiff)")[0]
+				hdiff_path = path(self.hdiff_dir.name, source)
+				
+				if os.path.isfile(hdiff_path):
+					load_path = hdiff_path
+			
+			self.allocator.load_file(load_path)
 
-			alone, steps, curr = False, 8, 1
-			if file in alone_files:
-				alone, steps = True, 5
+			# extract every file from this one
+			for file in [file for file in files if file["source"] == source]:
+				pos += 1
+				self.update_progress(pos, len(files), 1)
 
-			######################################
-			### 1 - Extract original .pck file ###
-			######################################
+				file["source"] = file["source"].split(" (hdiff)")[0]
+				data = self.allocator.read_at(file["source"], file["offset"], file["size"])
+				
+				filepath = path("/".join(file["path"]), file["name"])
+				fullpath = path(output, filepath)
+				os.makedirs(os.path.dirname(fullpath), exist_ok=True)
+				
+				with open(fullpath, "wb") as f:
+					f.write(data)
+					f.close()
 
-			if skips[0] != "1":
-				# update files
-				if os.path.exists("temp"):
-					shutil.rmtree("temp")
-				os.makedirs(path("temp"), exist_ok=True)
-				shutil.copy(f"audio/{file}", f"temp/{file}")
+			# unload source
+			self.allocator.unload_file(source)
 
-				output_path = "original_decoded"
-				if alone:
-					output_path = "wem"
+		# security
+		self.allocator.free_mem()
 
-				# update spinner and call program
-				spinner.text = f"[{curr}/{steps}] Extracting"
-				spinner.start()
-				wavescan.extract(path(f"temp/{file}"), path(f"temp/{output_path}"))
-				spinner.stop()
-				print(f"[{curr}/{steps}] Extracting")
+	def extract_wav(self, _input, files, output):
+		print(": Converting audio to wav")
+		pos = 0
+		for file in files:
+			pos += 1
+			self.update_progress(pos, len(files), 2)
 
-				if alone:
-					all_files = os.listdir(path("temp/wem"))
+			filename = f'{os.path.basename(file).split(".")[0]}.wav'
+			filepath = path(output, os.path.dirname(file), filename)
+			os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-			######################################
-			### 2 - Patch the .pck with .hdiff ###
-			######################################
+			args = [
+				path(cwd, "tools/vgmstream/vgmstream-cli.exe"),
+				"-o",
+				filepath,
+				path(_input, file)
+			]
 
-			if skips[1] != "1":
-				if not alone:
-					curr += 1
+			call(args)
 
-					# update files
-					shutil.copy(f"patch/{file}.hdiff", f"temp/{file}.hdiff")
-					shutil.move(f"temp/{file}", f"temp/{file.split('.')[0]}.original.pck")
+	def extract_ffmpeg(self, _input, files, output, _format):
+		print(f": Converting audio to {_format}")
 
-					# prepare args
-					args = [
-						path("tools/hpatchz/hpatchz.exe"),
-						"-f",
-						path(f"temp/{file.split('.')[0]}.original.pck"),
-						path(f"temp/{file}.hdiff"),
-						path(f"temp/{file}")
-					]
+		encoders = {
+			"mp3": "libmp3lame",
+			"ogg": "libvorbis"
+		}
+		
+		encoder = encoders[_format]
 
-					# update spinner and call program
-					spinner.text = f"[{curr}/{steps}] Patching"
-					spinner.start()
-					call(args)
-					spinner.stop()
-					print(f"[{curr}/{steps}] Patching")
+		pos = 0
+		for file in files:
+			pos += 1
+			self.update_progress(pos, len(files), 3)
 
-			#####################################
-			### 3 - Extract patched .pck file ###
-			#####################################
+			filename = f'{os.path.basename(file).split(".")[0]}.{_format}'
+			filepath = path(output, os.path.dirname(file), filename)
+			os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-			if skips[2] != "1":
-				if not alone:
-					curr += 1
+			args = [
+				path(cwd, "tools/ffmpeg/ffmpeg.exe"),
+				"-i",
+				path(_input, file),
+				"-acodec",
+				encoder,
+				"-b:a",
+				"192k", # 192|4
+				filepath
+			]
 
-					# update spinner and call program
-					spinner.text = f"[{curr}/{steps}] Extracting patch"
-					spinner.start()
-					wavescan.extract(path(f"temp/{file}"), path(f"temp/patched_decoded"))
-					spinner.stop()
-					print(f"[{curr}/{steps}] Extracting patch")
+			call(args)
+		
+	### other ###
 
-					# cleanup useless files to save storage
-					os.remove(f"temp/{file}")
-					os.remove(f"temp/{file}.hdiff")
-					os.remove(f"temp/{file.split('.')[0]}.original.pck")
+	def update_progress(self, current, total, step):
+		base = 100 / self.steps
+		self.progress(["total", current * base // total + base * (step - 1)])
+		self.progress(["file", current * 100 // total])
 
-			####################################
-			### 4 - Search new/changed files ###
-			####################################
-
-			if skips[3] != "1":
-				if not alone:
-					curr += 1
-
-					# update spinner
-					spinner.text = f"[{curr}/{steps}] Filtering files"
-					spinner.start()
-
-					# compare folders
-					diff = filecmp.dircmp(path("temp/original_decoded"), path("temp/patched_decoded"))
-					new_files, changed_files = diff.right_only, diff.diff_files
-					all_files = [*new_files, *changed_files]
-
-					# merge files
-					os.makedirs(path("temp/wem"), exist_ok=True)
-
-					for file in all_files:
-						shutil.move(f"temp/patched_decoded/{file}", f"temp/wem/{file}")
-
-					# cleanup useless folders to save storage
-					shutil.rmtree("temp/original_decoded")
-					shutil.rmtree("temp/patched_decoded")
-
-					spinner.stop()
-					print(f"[{curr}/{steps}] Filtering files")
-
-			######################################
-			### 5 - Convert .wem files to .wav ###
-			######################################
-
-			if skips[4] != "1":
-				curr += 1
-
-				# updates folders and progress bar
-				os.makedirs(path("temp/wav"), exist_ok=True)
-				bar = PixelBar(f"[{curr}/{steps}] Converting to wav ", max=len(all_files), suffix='%(percent).1f%% - %(eta)ds left')
-
-				# convert each file one by one
-				for file in all_files:
-					args = [
-						path("tools/vgmstream/vgmstream-cli.exe"),
-						"-o",
-						path(f"temp/wav/{file.split('.')[0]}.wav"),
-						path(f"temp/wem/{file}")
-					]
-
-					call(args)
-					bar.next()
-				bar.finish()
-
-				# cleanup
-				shutil.rmtree("temp/wem")
-				wem_length = len(all_files)
-				all_files = [f for f in os.listdir(path("temp/wav"))]
-				diff_length = wem_length - len(all_files)
-
-				if diff_length > 0:
-					print(f": Failed to extract {diff_length} files out of {wem_length} (probably no extractable content)")
-
-			#############################################
-			### 6 - Convert .wav files to .mp3 or ogg ###
-			#############################################
-
-			if skips[5] != "1":
-				curr += 1
-
-				# updates folders and progress bar
-				os.makedirs(path(f"temp/{audio_format}"), exist_ok=True)
-				bar = PixelBar(
-					f"[{curr}/{steps}] Converting to {audio_format} ",
-					max=len(all_files),
-					suffix="%(percent).1f%% - %(eta)ds left",
-				)
-
-				# update file list
-				all_files = [f"{f.split('.')[0]}.wav" for f in all_files]
-
-				# convert each file one by one
-				for file in all_files:
-					args = [
-						path("tools/ffmpeg/ffmpeg.exe"),
-						"-i",
-						path(f"temp/wav/{file}"),
-						"-acodec",
-						"libvorbis" if audio_format == "ogg" else "libmp3lame",
-						"-b:a",
-						"192k",
-						path(f"temp/{audio_format}/{file.split('.')[0]}.{audio_format}"),
-					]
-
-					call(args)
-					bar.next()
-				bar.finish()
-
-				# cleanup
-				shutil.rmtree("temp/wav")
-
-				# update files list
-				all_files = [f"{f.split('.')[0]}.{audio_format}" for f in all_files]
-
-				if not alone:
-					new_files = [f"{f.split('.')[0]}.{audio_format}" for f in new_files]
-					changed_files = [f"{f.split('.')[0]}.{audio_format}" for f in changed_files]
-
-			#########################
-			### 7 - Map filenames ###
-			#########################
-
-			if skips[6] != "1":
-				curr += 1
-
-				# update spinner
-				spinner.text = f"[{curr}/{steps}] Mapping names"
-				spinner.start()
-
-				os.makedirs(path(f"temp/map/unmapped"), exist_ok=True)
-				if not alone:
-					os.makedirs(path(f"temp/map/new_files/unmapped"), exist_ok=True)
-					os.makedirs(path(f"temp/map/changed_files/unmapped"), exist_ok=True)
-
-				lang = None
-
-				for file in all_files:
-					file_name = file.split(".")[0]
-					base_path = "temp/map"
-					if not alone:
-						if file in new_files:
-							base_path = "temp/map/new_files"
-						elif file in changed_files:
-							base_path = "temp/map/changed_files"
-
-					key_data = mapper.get_key(file_name, lang is None)
-
-					if key_data is not None:
-						if lang is None:
-							lang = key_data[1]
-							# TODO: use language for output path
-							print(f"\n: {lang} detected")
-
-						dir_path = path(f"{base_path}/{key_data[0]}.{audio_format}")
-						os.makedirs(os.path.dirname(dir_path), exist_ok=True)
-						shutil.copy(path(f"temp/{audio_format}/{file}"), dir_path)
-					else:
-						shutil.copy(path(f"temp/{audio_format}/{file}"), path(f"{base_path}/unmapped/{file}"))
-
-				# stop spinner
-				spinner.stop()
-				print(f"[{curr}/{steps}] Mapping names")
-
-			######################################################
-			### 8 - Clean everything and move result to output ###
-			######################################################
-
-			if skips[7] != "1":
-				curr += 1
-
-				# update spinner
-				spinner.text = f"[{curr}/{steps}] Cleaning up"
-				spinner.start()
-
-				filename = filename.split('.')[0]
-
-				shutil.move(f"temp/map", f"output/{filename}")
-
-				spinner.stop()
-				print(f"[{curr}/{steps}] Cleaning up")
-
-		except Exception as e:
-			print("")
-			print("An error occured while processing this file ! Skipping to the next one, details of the error bellow :")
-			print(f"Line {sys.exc_info()[-1].tb_lineno}, {e}")
-
-	# all files processed
-	if os.path.exists("temp") and skips[8] != "1":
-		shutil.rmtree("temp")
-	print("-"*30)
-	print("Done extracting everything !")
-
-if __name__ == "__main__":
-	main()
+	def reset(self):
+		if self.mapper is not None:
+			self.mapper.reset()
+		self.allocator.free_mem()
+		if self.hdiff_dir is not None:
+			self.hdiff_dir.cleanup()
+			self.hdiff_dir = None

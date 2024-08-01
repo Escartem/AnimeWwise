@@ -1,7 +1,5 @@
 # reader for the .map format i've made to improve reading speed and mapping size
 from filereader import FileReader
-import os
-import json
 
 
 class Mapper:
@@ -31,21 +29,39 @@ class Mapper:
 		reader = self.reader
 
 		# utils
-		val = lambda length: int.from_bytes(reader.ReadBytes(length), "little")
-		raw = lambda length: reader.ReadBytes(length).rstrip(b"\x00").decode("utf-8")
+		val = lambda length: vl2(reader.ReadBytes(length))
+		vl2 = lambda data: int.from_bytes(data, "little")
+		raw = lambda length: rw2(reader.ReadBytes(length))
+		rw2 = lambda data: data.rstrip(b"\x00").decode("utf-8")
+		n2p = lambda val: [e[0] for e in enumerate(list(bin(val)[2:][::-1])) if e[1] == "1"]
 
 		# get map meta
 		reader.ReadBytes(2)
 
 		games = {
-			b"ys": "Genshin"
+			"ys": "Genshin",
+			"sr": "Star Rail",
+			"zzz": "Zenless Zone Zero"
 			# more later
 		}
 
+		coverages = [
+			"english voicelines",
+			"chinese voicelines",
+			"japanese voicelines",
+			"korean voicelines",
+			"music",
+			"sfx"
+		]
+
+		header_size = val(1) # header size
+		block_size = 4
+		header_blocks = [reader.ReadBytes(block_size) for _ in range(header_size // block_size)]
+
 		infos = {
-			"game": games[reader.ReadBytes(2)],
-			"version": list(raw(2)),
-			"null": reader.ReadBytes(4)
+			"game": games[rw2(header_blocks[0])],
+			"version": list(rw2(header_blocks[1])),
+			"coverage": int(rw2(header_blocks[2])),
 			# more later
 		}
 
@@ -54,19 +70,23 @@ class Mapper:
 		# read prefixes
 		prefixes = {}
 		n_prefixes = reader.ReadUInt8()
+		l_prefixes = reader.ReadUInt8()
 
 		for i in range(n_prefixes):
-			prefix = raw(4)
+			prefix = raw(l_prefixes)
 			marker = reader.ReadBytes(1)
 			prefixes[marker] = prefix
 
 		# read languages
 		langs_offsets = {}
 		n_langs = reader.ReadUInt8()
+		l_langs = reader.ReadUInt8()
 		
 		for i in range(n_langs):
 			offset = reader.GetBufferPos()
-			langs_offsets[offset] = raw(11)
+			langs_offsets[offset] = raw(l_langs)
+
+		self.langs_offsets = langs_offsets
 
 		# read folders
 		folder_offsets = {}
@@ -92,7 +112,11 @@ class Mapper:
 				path.append(folder_offsets[reader.ReadUInt16()])
 			
 			name_length = reader.ReadUInt8()
-			prefix = prefixes[reader.ReadBytes(1)]
+			prefix = reader.ReadBytes(1)
+			if prefix != b"\x00":
+				prefix = prefixes[prefix]
+			else:
+				prefix = ""
 			name = raw(name_length)
 			
 			name = f"{prefix}{name}"
@@ -101,17 +125,16 @@ class Mapper:
 
 			files_offsets[offset] = path
 
+		self.files_offsets = files_offsets
+
 		# read keys
+		# GI 3649050
 		keys_data = {}
 		n_keys = val(3)
 
-		for i in range(n_keys):
-			key = raw(16)
-			
-			lang_offset = reader.ReadUInt8()
-			file_offset = val(3)
-
-			keys_data[key] = [files_offsets[file_offset], langs_offsets[lang_offset]]
+		left = reader.GetRemainingLength()
+		data = bytearray(reader.ReadBytes(left))
+		keys_data = {rw2(data[i:i+16]): bytes(data[i+16:i+21]) for i in range(0, len(data), 21)}
 
 		self.keys_data = keys_data
 
@@ -120,7 +143,14 @@ class Mapper:
 		print(f": {n_langs} supported languages")
 		print(f": {n_files} mapped files")
 		print(f": {n_keys} available keys")
-
+		print(f"")
+		print(f"> Mapping coverage")
+		coverage = n2p(infos["coverage"])
+		for val in coverage:
+			if val%2 == 0:
+				print(f": partial {coverages[val//2-1]}")
+			else:
+				print(f": {coverages[(val-1)//2]}")
 
 	def get_key(self, key, lang=False):
 		keys_data = self.keys_data
@@ -128,9 +158,15 @@ class Mapper:
 			return None
 
 		key_data = keys_data[key]
-		data = [key_data[0]]
+		data = [self.files_offsets[int.from_bytes(key_data[2:], "little")]]
 
 		if lang:
-			data.append(key_data[1])
+			data.append(self.langs_offsets[int.from_bytes(key_data[:1], "little")])
 
 		return data
+
+	def reset(self):
+		self.reader = None
+		self.langs_offsets.clear()
+		self.files_offsets.clear()
+		self.keys_data.clear()

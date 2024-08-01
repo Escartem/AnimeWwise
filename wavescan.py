@@ -1,23 +1,28 @@
 # Custom rewrite of the Wwise AKPK packages extractor, original by Nicknine and bnnm
-from filereader import FileReader
-import traceback
 import os
+import traceback
+from bnk import bnk2wem
 
 
 reader = None
 bank_version = 0
+wwise_data = []
+filename = ""
 
 
-def extract(input_file, output_folder):
+def get_data(_reader, _filename):
+	global wwise_data
 	global bank_version
 	global reader
+	global filename
 
-	file = open(input_file, "rb")
-	reader = FileReader(file, "little") # defaults to little endian
+	filename = _filename
+	wwise_data = []
+	reader = _reader
 
 	# check file
 	if reader.ReadBytes(4) != b"AKPK":
-		file.close()
+		# file.close()
 		raise Exception("not a valid audio file")
 
 	# check endianness
@@ -29,7 +34,6 @@ def extract(input_file, output_folder):
 	elif endian_check == 0x1000000:
 		endianness = 1 # big
 	else:
-		file.close()
 		raise Exception("couldn't detect endianness")
 
 	# retrieve sectors in header
@@ -52,7 +56,6 @@ def extract(input_file, output_folder):
 	try:
 		lang_array = get_langs(languages_sector_size)
 	except Exception as e:
-		file.close()
 		raise Exception(f"failed to read languages, {e}, {traceback.format_exc()}")
 
 	# extract each sector
@@ -60,18 +63,16 @@ def extract(input_file, output_folder):
 	try:
 		for sector in sectors:
 			curr_sector = sector
-			extract_sector(*sector[1:], endianness, lang_array, bank_version, output_folder)
+			extract_sector(*sector[1:], endianness, lang_array, bank_version)
 
 			if sector[0] and bank_version == 0:
 				if externals_sector_size == 0:
 					print("can't detect bank version")
 				bank_version = 62
 	except Exception as e:
-		file.close()
 		raise Exception(f"failed to extract sector {curr_sector}, {e}, {traceback.format_exc()}")
 
-	# close
-	file.close()
+	return wwise_data
 
 def get_langs(langs_sector_size):
 	string_offset = reader.GetBufferPos()
@@ -125,7 +126,9 @@ def detect_bank_version(offset):
 
 	reader.SetBufferPos(current)
 
-def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_array, bank_version, output_folder, filter_bnk_only=0, filter_wem_only=0, include_name=False):
+def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_array, bank_version, filter_bnk_only=0, filter_wem_only=0, include_name=False):
+	global wwise_data
+
 	# check sector validity
 	if section_size == 0:
 		return
@@ -210,23 +213,16 @@ def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_
 			continue
 
 		# file infos
-		# print(f"NAME - {name} | OFFSET - {offset} | SIZE - {size}")
+		if ext == "bnk":
+			# get data from bnk
+			pos = reader.GetBufferPos()
+			reader.SetBufferPos(offset)
+			bnk_data = reader.ReadBytes(size)
+			reader.SetBufferPos(pos)
 
-		# save file into disk
-		current = reader.GetBufferPos()
-		reader.SetBufferPos(offset)
-		file_data = reader.ReadBytes(size)
+			wems = bnk2wem(bnk_data)
 
-		if include_name:
-			file_path = os.path.join(output_folder, os.path.dirname(name))
+			for wem in wems:
+				wwise_data.append([f"{os.path.basename(name).split('.')[0]}_{wem[0]}.wem", offset+wem[1], wem[2], filename])
 		else:
-			file_path = output_folder
-		name = os.path.basename(name)
-
-		os.makedirs(file_path, exist_ok=True)
-
-		with open(os.path.join(file_path, name), "wb+") as f:
-			f.write(file_data)
-			f.close()
-
-		reader.SetBufferPos(current)
+			wwise_data.append([os.path.basename(name), offset, size, filename])
