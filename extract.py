@@ -65,8 +65,8 @@ class WwiseExtract:
 
 	def compare_diff(self, old, new):
 		old_dict = {file[0]:file[2] for file in old}
-		new_files = [file for file in new if file not in list(old_dict.keys())]
-		changed_files = [file for file in new if file in list(old_dict.keys()) and file[2] != old_dict[file[0]]]
+		new_files = [file for file in new if file[0] not in list(old_dict.keys())]
+		changed_files = [file for file in new if file[0] in list(old_dict.keys()) and file[2] != old_dict[file[0]]]
 
 		return [new_files, changed_files]
 
