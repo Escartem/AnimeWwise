@@ -4,6 +4,7 @@ import json
 import math
 import extract
 from PyQt5 import uic
+from requests import get
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMetaType, Qt
 from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView, QAbstractItemView, QTreeWidgetItem
@@ -79,9 +80,28 @@ class AnimeWwise(QMainWindow):
 		self.setupActions()
 		sys.stdout = TextEditStream(self.console)
 		self.extract = extract.WwiseExtract()
+		self.checkMapsUpdates()
 
 		# utils
 		self.selectFolder = lambda: QFileDialog.getExistingDirectory(self, "Select Folder")
+
+	def checkMapsUpdates(self):
+		print("Checking updates")
+		try:
+			getVersion = lambda m: sum([int(e["version"].replace(".", "")) for e in m["maps"]])
+			mapsVersion = getVersion(self.maps)
+			latestMaps = get("https://raw.githubusercontent.com/Escartem/AnimeWwise/master/maps/index.json")
+			
+			if latestMaps.status_code == 200:
+				latestVersion = getVersion(json.loads(latestMaps.text))
+
+			if mapsVersion < latestVersion:
+				print("Update found")
+				QMessageBox.information(None, "Info", "Newer version of the mappings are availble, please update the program", QMessageBox.Ok)
+			else:
+				print("No updates")
+		except:
+			print("Failed to check updates")
 
 	def getMaps(self):
 		with open("maps/index.json", "r") as f:
