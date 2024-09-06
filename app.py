@@ -306,7 +306,7 @@ class AnimeWwise(QMainWindow):
 		
 		return {
 			"name": item.text(0),
-			"path": path[1:-1],
+			"path": path[:-1] if path[0] in ["changed_files", "new_files"] else path[1:-1],
 			"source": item.text(3),
 			"offset": int(item.text(1), 16),
 			"size": int(item.text(2))
