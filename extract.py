@@ -3,6 +3,7 @@ import io
 import tempfile
 import wavescan
 import subprocess
+import platform
 from mapper import Mapper
 from allocator import Allocator
 from filereader import FileReader
@@ -90,6 +91,9 @@ class WwiseExtract:
 			path(working_dir.name, "patch.pck.hdiff"),
 			path(working_dir.name, "patch.pck")
 		]
+
+		if platform.system() != "Windows":
+			args.insert(0, "wine")
 
 		call(args)
 
@@ -279,6 +283,9 @@ class WwiseExtract:
 				path(_input, file)
 			]
 
+			if platform.system() != "Windows":
+				args.insert(0, "wine")
+
 			call(args)
 
 	def extract_ffmpeg(self, _input, files, output, _format):
@@ -310,6 +317,9 @@ class WwiseExtract:
 				"192k", # 192|4
 				filepath
 			]
+
+			if platform.system() != "Windows":
+				args.insert(0, "wine")
 
 			call(args)
 		
