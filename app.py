@@ -3,6 +3,7 @@ import sys
 import json
 import math
 import extract
+import platform
 from PyQt5 import uic
 from requests import get
 from PyQt5.QtGui import QTextCursor
@@ -169,7 +170,9 @@ class AnimeWwise(QMainWindow):
 			self.tabs.setTabEnabled(2, True)
 			self.tabs.setCurrentIndex(2)
 			print("Finished extracting everything !")
-			os.startfile(self.folders["output"])
+
+			if platform.system() == "Windows":
+				os.startfile(self.folders["output"])
 
 	# page 1 - config
 	def loadFiles(self):
