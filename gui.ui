@@ -5,24 +5,27 @@
   <property name="windowModality">
    <enum>Qt::NonModal</enum>
   </property>
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>1100</width>
-    <height>800</height>
+    <height>900</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
     <width>1100</width>
-    <height>800</height>
+    <height>900</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>1100</width>
-    <height>800</height>
+    <height>900</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -39,7 +42,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <property name="usesScrollButtons">
      <bool>true</bool>
@@ -210,7 +213,7 @@
         <x>0</x>
         <y>20</y>
         <width>1081</width>
-        <height>591</height>
+        <height>551</height>
        </rect>
       </property>
       <property name="columnCount">
@@ -235,135 +238,49 @@
        <string>Search something...</string>
       </property>
      </widget>
-    </widget>
-    <widget class="QWidget" name="extractTab">
-     <attribute name="title">
-      <string>Extract</string>
-     </attribute>
-     <widget class="QWidget" name="verticalLayoutWidget_2">
+     <widget class="QWidget" name="horizontalLayoutWidget">
       <property name="geometry">
        <rect>
-        <x>9</x>
-        <y>9</y>
-        <width>1061</width>
-        <height>601</height>
+        <x>0</x>
+        <y>580</y>
+        <width>1081</width>
+        <height>31</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="mainVLayout2">
+      <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <layout class="QHBoxLayout" name="outputLayout">
-         <item>
-          <widget class="QLabel" name="outputLabel">
-           <property name="text">
-            <string>Output folder</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="outputPath">
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="changeOutput">
-           <property name="text">
-            <string>Select</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="outputFormatLayout">
-         <item>
-          <widget class="QLabel" name="outputFormatLabel">
-           <property name="text">
-            <string>Output format</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="outputFormat">
-           <property name="currentText">
-            <string/>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="separatorC">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+        <widget class="QLabel" name="audioInfoLabel">
+         <property name="text">
+          <string>sample_long_name.wem | Duration : 00:00 | Stereo (48000Hz)</string>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QVBoxLayout" name="progressWrapperLayout">
-         <item>
-          <layout class="QHBoxLayout" name="totalProgressLayout">
-           <item>
-            <widget class="QLabel" name="totalProgressLabel">
-             <property name="text">
-              <string>Total progress</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QProgressBar" name="totalProgress">
-             <property name="value">
-              <number>0</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="fileProgressLayout">
-           <item>
-            <widget class="QLabel" name="fileProgressLabel">
-             <property name="text">
-              <string>Per file progress</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QProgressBar" name="fileProgress">
-             <property name="value">
-              <number>0</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="Line" name="separatorD">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+        <widget class="QLabel" name="audioPlayPadding">
+         <property name="text">
+          <string/>
          </property>
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="extractLayout">
-         <item>
-          <widget class="QPushButton" name="extractAll">
-           <property name="text">
-            <string>Extract All</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="extractSelected">
-           <property name="text">
-            <string>Extract Selected</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QPushButton" name="playAudioBtn">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Play</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="stopAudioBtn">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Stop</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -373,9 +290,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>640</y>
+      <y>720</y>
       <width>1081</width>
-      <height>131</height>
+      <height>151</height>
      </rect>
     </property>
     <property name="maximumSize">
@@ -393,6 +310,54 @@
     <property name="readOnly">
      <bool>true</bool>
     </property>
+   </widget>
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>16</x>
+      <y>650</y>
+      <width>1071</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="progressWrapperLayout">
+     <item>
+      <layout class="QHBoxLayout" name="totalProgressLayout">
+       <item>
+        <widget class="QLabel" name="totalProgressLabel">
+         <property name="text">
+          <string>Total progress</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QProgressBar" name="totalProgress">
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="fileProgressLayout">
+       <item>
+        <widget class="QLabel" name="fileProgressLabel">
+         <property name="text">
+          <string>Per file progress</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QProgressBar" name="fileProgress">
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -412,7 +377,40 @@
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
+   <widget class="QMenu" name="menuExtract">
+    <property name="title">
+     <string>Extract</string>
+    </property>
+    <widget class="QMenu" name="menuOutput_format">
+     <property name="title">
+      <string>Output format</string>
+     </property>
+     <addaction name="actionformat"/>
+    </widget>
+    <addaction name="menuOutput_format"/>
+    <addaction name="separator"/>
+    <addaction name="actionExtract_All"/>
+    <addaction name="actionExtract_Selected"/>
+   </widget>
+   <widget class="QMenu" name="menuOther">
+    <property name="title">
+     <string>Other</string>
+    </property>
+    <addaction name="actionReport_a_bug"/>
+    <addaction name="actionSource_code"/>
+    <addaction name="actionDiscord"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionExpand_all"/>
+    <addaction name="actionCollapse_all"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuExtract"/>
+   <addaction name="menuOther"/>
   </widget>
   <action name="actionnot_working_here_yet">
    <property name="text">
@@ -437,6 +435,64 @@
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionExtract_All">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Extract All</string>
+   </property>
+  </action>
+  <action name="actionExtract_Selected">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Extract Selected</string>
+   </property>
+  </action>
+  <action name="actionReport_a_bug">
+   <property name="text">
+    <string>Report a bug</string>
+   </property>
+  </action>
+  <action name="actionSource_code">
+   <property name="text">
+    <string>Source code</string>
+   </property>
+  </action>
+  <action name="actionDiscord">
+   <property name="text">
+    <string>Discord</string>
+   </property>
+  </action>
+  <action name="actionformat">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>format</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionExpand_all">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Expand all</string>
+   </property>
+  </action>
+  <action name="actionCollapse_all">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Collapse all</string>
    </property>
   </action>
  </widget>

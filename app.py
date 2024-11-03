@@ -4,11 +4,12 @@ import json
 import math
 import extract
 import platform
+import webbrowser
 from PyQt5 import uic
 from requests import get
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMetaType, Qt
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView, QAbstractItemView, QTreeWidgetItem
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView, QAbstractItemView, QTreeWidgetItem, QAction, QActionGroup
 
 QMetaType.type("QTextCursor")
 
@@ -72,70 +73,113 @@ class AnimeWwise(QMainWindow):
 	def __init__(self):
 		super(AnimeWwise, self).__init__()
 		uic.loadUi("gui.ui", self)
-		self.maps = self.getMaps()
+		self.maps = self.getJson("maps/index")
+		self.setWindowTitle(f'AnimeWwise | v{".".join(list(str(self.getJson("version")["version"])))}')
 		self.folders = {
 			"input": "",
 			"output": "",
 			"diff": ""
 		}
+		self.format = "wav"
+		self.fileStructure = {"folders": {}, "files": []}
 		self.setupActions()
-		sys.stdout = TextEditStream(self.console)
+		# sys.stdout = TextEditStream(self.console)
 		self.extract = extract.WwiseExtract()
-		self.checkMapsUpdates()
+		self.checkUpdates()
 
 		# utils
 		self.selectFolder = lambda: QFileDialog.getExistingDirectory(self, "Select Folder")
 
-	def checkMapsUpdates(self):
-		print("Checking updates")
+	def checkUpdates(self):
+		print("Checking for updates...")
 		try:
-			getVersion = lambda m: sum([int(e["version"].replace(".", "")) for e in m["maps"]])
-			mapsVersion = getVersion(self.maps)
-			latestMaps = get("https://raw.githubusercontent.com/Escartem/AnimeWwise/master/maps/index.json")
+			currentVersion = self.getJson("version")
+			latestVersionReq = get("https://raw.githubusercontent.com/Escartem/AnimeWwise/master/version.json")
 			
-			if latestMaps.status_code == 200:
-				latestVersion = getVersion(json.loads(latestMaps.text))
+			if latestVersionReq.status_code == 200:
+				latestVersion = json.loads(latestMaps.text)
 
-			if mapsVersion < latestVersion:
-				print("Update found")
-				QMessageBox.information(None, "Info", "Newer version of the mappings are availble, please update the program", QMessageBox.Ok)
+			if currentVersion["version"] < latestVersion["version"]:
+				print("Update found !")
+				QMessageBox.information(None, "Info", "Newer version of the program is availble, please update.", QMessageBox.Ok)
+			elif currentVersion["mapsVersion"] < latestVersion["mapsVersion"]:
+				print("Update found !")
+				QMessageBox.information(None, "Info", "Newer version of the mappings are availble, please update the program.", QMessageBox.Ok)
 			else:
 				print("No updates")
 		except:
-			print("Failed to check updates")
+			print("Failed to check updates :(")
 
-	def getMaps(self):
-		with open("maps/index.json", "r") as f:
-			maps = json.loads(f.read())
+	def getJson(self, path):
+		with open(f"{path}.json", "r") as f:
+			data = json.loads(f.read())
 			f.close()
 
-		return maps
+		return data
 
-	def setFolder(self, elem, folder):
+	def setFolder(self, elem=None, folder=None):
 		path = self.selectFolder()
 		self.folders[folder] = path
-		elem.setText(path)
+		if elem:
+			elem.setText(path)
 
 	def setupActions(self):
 		self.changeInput.clicked.connect(lambda: self.setFolder(self.inputPath, "input"))
 		self.changeAltInput.clicked.connect(lambda: self.setFolder(self.altInputPath, "diff"))
-		self.changeOutput.clicked.connect(lambda: self.setFolder(self.outputPath, "output"))
 
-		self.outputFormat.addItems(["wem (fastest)", "wav (fast)", "mp3 (slow)", "ogg (slow)"])
 		self.assetMap.addItems(["No map", *[f'{e["game"]} - v{e["version"]}' for e in self.maps["maps"]]])
 
-		self.tabs.setTabEnabled(1, False)
-		self.tabs.setTabEnabled(2, False)
+		self.setExtractionState(False)
+
+		self.updateTreeWidget(self.fileStructure)
 
 		self.loadFilesButton.clicked.connect(lambda: self.loadFiles())
 
 		self.actionReset.triggered.connect(lambda: self.resetApp())
 		self.actionExit.triggered.connect(lambda: self.close())
 
-		self.extractSelected.clicked.connect(lambda: self.extractItems(False))
-		self.extractAll.clicked.connect(lambda: self.extractItems(True))
+		self.actionExtract_Selected.triggered.connect(lambda: self.extractItems(False))
+		self.actionExtract_All.triggered.connect(lambda: self.extractItems(True))
+
+		self.actionReport_a_bug.triggered.connect(lambda: self.openLink(0))
+		self.actionSource_code.triggered.connect(lambda: self.openLink(1))
+		self.actionDiscord.triggered.connect(lambda: self.openLink(2))
 
 		self.searchAsset.textChanged.connect(lambda: self.filterAsset())
+
+		# output format
+		formats = ["wem (fastest)", "wav (fast)", "mp3 (slow)", "ogg (slow)"]
+		action_group = QActionGroup(self)
+		action_group.setExclusive(True)
+
+		for index, item_name in enumerate(formats):
+			action = QAction(item_name, self)
+			action.setCheckable(True)
+			if index == 1:
+				action.setChecked(True)
+			self.menuOutput_format.addAction(action)
+			action_group.addAction(action)
+
+		action_group.triggered.connect(self.updateFormat)
+
+	def updateFormat(self, event):
+		text = event.text()
+		self.format = text.split(" ")[0]
+
+	def openLink(self, id):
+		urls = [
+			"https://github.com/Escartem/AnimeWwise/issues/new",
+			"https://github.com/Escartem/AnimeWwise",
+			"https://discord.gg/fzRdtVh"
+		]
+
+		webbrowser.open(urls[id])
+
+	def setExtractionState(self, state):
+		self.actionExtract_Selected.setEnabled(state)
+		self.actionExtract_All.setEnabled(state)
+		self.actionExpand_all.setEnabled(state)
+		self.actionCollapse_all.setEnabled(state)
 
 	# workers
 	@pyqtSlot(list)
@@ -152,23 +196,16 @@ class AnimeWwise(QMainWindow):
 		if data["action"] == "load":
 			self.fileStructure = data["content"]
 			self.updateTreeWidget(self.fileStructure)
-			self.tabs.setTabEnabled(0, False)
-			self.tabs.setTabEnabled(1, True)
-			self.tabs.setTabEnabled(2, True)
+			self.setExtractionState(True)
 			self.tabs.setCurrentIndex(1)
 			print("Done !")
 		if data["action"] == "error":
 			QMessageBox.warning(None, "Warning", data["content"]["msg"], QMessageBox.Ok)
 			state = data["content"]["state"]
-			if state == 1:
-				self.tabs.setTabEnabled(0, True)
-			elif state == 2:
-				self.tabs.setTabEnabled(1, True)
-				self.tabs.setTabEnabled(2, True)
+			if state == 2:
+				self.setExtractionState(True)
 		if data["action"] == "extract":
-			self.tabs.setTabEnabled(1, True)
-			self.tabs.setTabEnabled(2, True)
-			self.tabs.setCurrentIndex(2)
+			self.setExtractionState(True)
 			print("Finished extracting everything !")
 
 			if platform.system() == "Windows":
@@ -186,7 +223,6 @@ class AnimeWwise(QMainWindow):
 		else:
 			_map = None
 
-		self.tabs.setTabEnabled(0, False)
 		self.resetTreeWidget()
 
 		# why is all this required for threading damnit
@@ -225,28 +261,36 @@ class AnimeWwise(QMainWindow):
 
 	def resetTreeWidget(self):
 		self.treeWidget.clear()
-		self.tabs.setTabEnabled(1, False)
+		self.fileStructure = {"folders": {}, "files": []}
+		self.setExtractionState(False)
 
 	def updateTreeWidget(self, structure):
 		self.treeWidget.clear()
-		self.treeWidget.setColumnCount(3)
-		self.treeWidget.setHeaderLabels(["Name", "Offset", "Size", "Source"])
+		self.treeWidget.setColumnCount(4)
+		self.treeWidget.setHeaderLabels(["Name", "Duration", "Source", "Size", "Offset"])
 		
 		self.addItems(None, structure)
 
 		self.treeWidget.expandAll()
-		self.treeWidget.header().setSectionResizeMode(0, QHeaderView.Stretch)
-		self.treeWidget.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-		self.treeWidget.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+
+		self.treeWidget.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+		self.treeWidget.header().setSectionResizeMode(1, QHeaderView.Stretch)
+		self.treeWidget.header().setSectionResizeMode(2, QHeaderView.Stretch)
+		self.treeWidget.header().setSectionResizeMode(3, QHeaderView.Stretch)
+
 		self.treeWidget.setHeaderHidden(False)
 
 		self.treeWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
 		self.treeWidget.setDragDropMode(QAbstractItemView.NoDragDrop)
+		self.treeWidget.itemClicked.connect(self.updateAudioPreview)
+
+	def updateAudioPreview(self, item, column):
+		print(item.text(0))
 
 	def addItems(self, parent, element):
 		for folder_name in sorted(element.get("folders", {}).keys()):
 			folder_content = element["folders"][folder_name]
-			folder_item = QTreeWidgetItem([folder_name, "", "", ""])
+			folder_item = QTreeWidgetItem([folder_name, "", "", "", ""])
 			folder_item.setFlags(folder_item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
 			folder_item.setCheckState(0, Qt.Unchecked)
 			if parent is None:
@@ -256,7 +300,8 @@ class AnimeWwise(QMainWindow):
 			self.addItems(folder_item, folder_content)
 
 		for file in sorted(element.get("files", [])):
-			file_item = QTreeWidgetItem([str(file[0]), str(hex(file[1])), str(file[2]), str(file[3])])
+			file_meta = file[1]
+			file_item = QTreeWidgetItem([file[0], f'{round(file_meta["metadata"]["duration"], 2)} seconds', file_meta["source"], str(file_meta["size"]), str(hex(file_meta["offset"]))])
 			file_item.setFlags(file_item.flags() | Qt.ItemIsUserCheckable)
 			file_item.setCheckState(0, Qt.Unchecked)
 			if parent is None:
@@ -266,12 +311,15 @@ class AnimeWwise(QMainWindow):
 
 	# page 3 - extraction
 	def extractItems(self, _all):
+		self.setFolder(folder="output")
+
 		if self.folders["output"] == "":
 			QMessageBox.warning(None, "Warning", "Missing output folder !", QMessageBox.Ok)
 			return
 
 		checked_items = []
 	
+		# todo: use file structure instead of tree view
 		def check_items(item, _all):
 			if item.checkState(0) == Qt.Checked or _all:
 				if item.text(1) != "":
@@ -282,13 +330,11 @@ class AnimeWwise(QMainWindow):
 		for i in range(self.treeWidget.topLevelItemCount()):
 			check_items(self.treeWidget.topLevelItem(i), _all)
 
-		self.tabs.setTabEnabled(1, False)
-		self.tabs.setTabEnabled(2, False)
-		self.tabs.setCurrentIndex(2)
+		self.setExtractionState(False)
 
 		# yet another block of threading bs
 		self.backgroundThread = QThread()
-		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.folders["input"], "files": checked_items, "format": self.outputFormat.currentText()[:3], "output": self.folders["output"]})
+		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.folders["input"], "files": checked_items, "format": self.format, "output": self.folders["output"]})
 		self.backgroundWorker.moveToThread(self.backgroundThread)
 		self.backgroundThread.started.connect(self.backgroundWorker.run)
 		self.backgroundWorker.finished.connect(self.handleFinished)
@@ -310,18 +356,16 @@ class AnimeWwise(QMainWindow):
 		return {
 			"name": item.text(0),
 			"path": path[:-1] if path[0] in ["changed_files", "new_files"] else path[1:-1],
-			"source": item.text(3),
-			"offset": int(item.text(1), 16),
-			"size": int(item.text(2))
+			"source": item.text(2),
+			"offset": int(item.text(4), 16),
+			"size": int(item.text(3))
 		}
 
 	# misc
 	def resetApp(self):
 		self.resetTreeWidget()
 		self.extract.reset()
-		self.tabs.setTabEnabled(0, True)
-		self.tabs.setTabEnabled(1, False)
-		self.tabs.setTabEnabled(2, False)
+		self.setExtractionState(False)
 		print("Reset !")
 
 	def _appendText(self, text):

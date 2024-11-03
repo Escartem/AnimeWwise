@@ -1,9 +1,10 @@
 import os
 import io
+import wwise
 import tempfile
 import wavescan
-import subprocess
 import platform
+import subprocess
 from mapper import Mapper
 from allocator import Allocator
 from filereader import FileReader
@@ -62,7 +63,7 @@ class WwiseExtract:
 			hdiff_files = self.get_hdiff_files(data, hdiff_data, filename)
 			files = self.compare_diff(files, hdiff_files)
 
-		self.map_names(files, filename, hdiff is not None)
+		self.map_names(files, filename, hdiff is not None, data)
 
 	def compare_diff(self, old, new):
 		old_dict = {file[0]:file[2] for file in old}
@@ -112,7 +113,7 @@ class WwiseExtract:
 
 		return files
 	
-	def map_names(self, files, filename, hdiff=False, skip_source=True):
+	def map_names(self, files, filename, hdiff=False, data=None, skip_source=True):
 		# disable skip source if required
 		mapper = self.mapper
 		base = self.file_structure
@@ -128,6 +129,18 @@ class WwiseExtract:
 			else:
 				key = None
 
+			file_data = {
+				"source": file[3],
+				"size": file[2],
+				"offset": file[1],
+				"metadata": {}
+			}
+
+			wem_data = data[file_data["offset"]:file_data["offset"]+file_data["size"]]
+			parsed_wem = wwise.parse_wwise(FileReader(io.BytesIO(wem_data), "little"))
+
+			file_data["metadata"] = parsed_wem
+
 			if key is not None:
 				if hdiff:
 					if file in old_files[0]:
@@ -139,7 +152,7 @@ class WwiseExtract:
 				if skip_source:
 					parts = parts[1:]
 
-				self.add_to_structure(parts, [file[1], file[2], file[3]])
+				self.add_to_structure(parts, file_data)
 			else:
 				temp = base["folders"]
 
@@ -161,7 +174,7 @@ class WwiseExtract:
 
 				if "unmapped" not in temp:
 					temp["unmapped"] = {"folders": {}, "files": []}
-				temp["unmapped"]["files"].append(file)
+				temp["unmapped"]["files"].append([file[0], file_data])
 
 		self.file_structure = base
 
@@ -175,7 +188,7 @@ class WwiseExtract:
 			current_level = current_level["folders"][part]
 		if "files" not in current_level:
 			current_level["files"] = []
-		current_level["files"].append([parts[-1], meta[0], meta[1], meta[2]])
+		current_level["files"].append([parts[-1], meta])
 
 	### extracting files ###
 
