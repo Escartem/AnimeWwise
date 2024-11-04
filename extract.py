@@ -20,13 +20,15 @@ class WwiseExtract:
 
 	### loading files ###
 
-	def load_folder(self, _map, folder_path, diff_path, progress):
+	def load_folder(self, _map, files, diff_path, progress):
+		self.progress = progress
+		self.steps = 1
 		self.mapper = None
 		if _map is not None:
 			self.mapper = Mapper(path(cwd, f"maps/{_map}"))
 		self.file_structure = {"folders": {}, "files": []}
 
-		files = [f for f in os.listdir(folder_path) if f.endswith(".pck")]
+		# files = [f for f in os.listdir(folder_path) if f.endswith(".pck")]
 		hdiff_files = []
 		if diff_path != "":
 			hdiff_files = [f for f in os.listdir(diff_path) if f.endswith(".pck.hdiff")]
@@ -38,12 +40,12 @@ class WwiseExtract:
 		print(f"\nLoading {len(files)} files...")
 		for file in files:
 			pos += 1
-			progress(["load", pos * 100 // len(files)])
+			self.update_progress(pos, len(files), 1)
 
 			hdiff = None
-			if f"{file}.hdiff" in hdiff_files:
-				hdiff = path(diff_path, hdiff_files[hdiff_files.index(f"{file}.hdiff")])
-			self.load_file(path(folder_path, file), hdiff)
+			if f"{os.path.basename(file)}.hdiff" in hdiff_files:
+				hdiff = path(diff_path, hdiff_files[hdiff_files.index(f"{os.path.basename(file)}.hdiff")])
+			self.load_file(file, hdiff)
 
 		return self.file_structure
 

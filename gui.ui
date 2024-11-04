@@ -77,68 +77,174 @@
       </property>
       <layout class="QVBoxLayout" name="mainVLayout">
        <item>
-        <layout class="QGridLayout" name="ioGrid">
-         <item row="1" column="2">
-          <widget class="QPushButton" name="changeAltInput">
-           <property name="enabled">
-            <bool>true</bool>
+        <widget class="QLabel" name="paddingB">
+         <property name="text">
+          <string>
+
+</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="titleCenter">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="appTitle">
+           <property name="font">
+            <font>
+             <pointsize>32</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
            </property>
            <property name="text">
-            <string>Select</string>
+            <string>Welcome to AnimeWwise !</string>
            </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QPushButton" name="changeInput">
-           <property name="text">
-            <string>Select</string>
-           </property>
-           <property name="default">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLineEdit" name="altInputPath">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="altInputLabel">
-           <property name="text">
-            <string>Diff folder (optional)</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="inputLabel">
-           <property name="text">
-            <string>Input folder</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="inputPath">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="readOnly">
-            <bool>true</bool>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
            </property>
           </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QLabel" name="paddingA">
+           <property name="text">
+            <string>
+
+
+
+</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="lineAgain">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTabWidget" name="extractsTabs">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="pckExtract">
+          <attribute name="title">
+           <string>Extract audio package (.pck)</string>
+          </attribute>
+          <widget class="QWidget" name="gridLayoutWidget">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>10</y>
+             <width>1041</width>
+             <height>111</height>
+            </rect>
+           </property>
+           <layout class="QGridLayout" name="pckGrid">
+            <item row="0" column="2">
+             <widget class="QComboBox" name="pckLoadTypeCombo"/>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="pckLoadType">
+              <property name="text">
+               <string>What to load :</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QCheckBox" name="pckSubFold">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>Include subfolders ?</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="QLabel" name="pckPadding">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+         <widget class="QWidget" name="hdiffExtract">
+          <attribute name="title">
+           <string>Extract update package (.hdiff)</string>
+          </attribute>
+          <widget class="QWidget" name="gridLayoutWidget_2">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>10</y>
+             <width>1041</width>
+             <height>111</height>
+            </rect>
+           </property>
+           <layout class="QGridLayout" name="hdiffGrid">
+            <item row="1" column="0">
+             <widget class="QLabel" name="altInputLabel">
+              <property name="text">
+               <string>Diff folder</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="QPushButton" name="changeAltInput">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>Select</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="altInputPath">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" colspan="3">
+             <widget class="QLabel" name="label">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Select here the folder containing the .hdiff files present in the game update package. And for the input folder asked upon loading, select the game audio folder before the update !
+Subfolders are disabled in this mode, make sure to be in the correct place. For any help check the README.md or ask on discord.</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </widget>
        </item>
        <item>
         <widget class="Line" name="separatorA">
@@ -148,10 +254,16 @@
         </widget>
        </item>
        <item>
+        <widget class="QLabel" name="paddingC">
+         <property name="text">
+          <string>
+
+</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <layout class="QGridLayout" name="settingsGrid">
-         <item row="0" column="1">
-          <widget class="QComboBox" name="assetMap"/>
-         </item>
          <item row="0" column="0">
           <widget class="QLabel" name="assetMapLabel">
            <property name="text">
@@ -159,7 +271,19 @@
            </property>
           </widget>
          </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="assetMap"/>
+         </item>
         </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="paddingD">
+         <property name="text">
+          <string>
+
+</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="Line" name="separatorB">
@@ -171,6 +295,15 @@
        <item>
         <layout class="QVBoxLayout" name="loadLayout">
          <item>
+          <widget class="QLabel" name="paddingE">
+           <property name="text">
+            <string>
+
+</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="loadFilesButton">
            <property name="text">
             <string>Load file(s)</string>
@@ -178,25 +311,13 @@
           </widget>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="loadProgressLayout">
-           <item>
-            <widget class="QLabel" name="loadLabel">
-             <property name="text">
-              <string>Progress</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QProgressBar" name="loadProgress">
-             <property name="value">
-              <number>0</number>
-             </property>
-             <property name="invertedAppearance">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <widget class="QLabel" name="paddingF">
+           <property name="text">
+            <string>
+
+</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -470,10 +591,6 @@
   </action>
  </widget>
  <tabstops>
-  <tabstop>inputPath</tabstop>
-  <tabstop>changeInput</tabstop>
-  <tabstop>altInputPath</tabstop>
-  <tabstop>changeAltInput</tabstop>
   <tabstop>tabs</tabstop>
  </tabstops>
  <resources/>

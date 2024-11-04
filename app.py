@@ -125,8 +125,11 @@ class AnimeWwise(QMainWindow):
 			elem.setText(path)
 
 	def setupActions(self):
-		self.changeInput.clicked.connect(lambda: self.setFolder(self.inputPath, "input"))
 		self.changeAltInput.clicked.connect(lambda: self.setFolder(self.altInputPath, "diff"))
+
+		self.pckLoadTypeCombo.addItems(["Folder", "File"])
+		self.pckLoadTypeCombo.currentIndexChanged.connect(self.loadTypeChange)
+		self.loadType = "folder"
 
 		self.assetMap.addItems(["No map", *[f'{e["game"]} - v{e["version"]}' for e in self.maps["maps"]]])
 
@@ -167,6 +170,14 @@ class AnimeWwise(QMainWindow):
 		action_group.triggered.connect(self.updateFormat)
 
 	# utils
+	def loadTypeChange(self, event):
+		if event == 0:
+			self.pckSubFold.setEnabled(True)
+			self.loadType = "folder"
+		elif event == 1:
+			self.pckSubFold.setEnabled(False)
+			self.loadType = "file"
+
 	def updateFormat(self, event):
 		text = event.text()
 		self.format = text.split(" ")[0]
@@ -191,14 +202,14 @@ class AnimeWwise(QMainWindow):
 			return f"{size} b"
 		elif size > 1024 and size < 1048576:
 			return f"{size//1024} KiB"
-		elif size > 1048576:
+		elif size > 1048576 and size < 1073741824:
 			return f"{size//1048576} MiB"
+		elif size > 1073741824:
+			return f"{size//1073741824} GiB"
 
 	# workers
 	@pyqtSlot(list)
 	def progressBarSlot(self, progress):
-		if progress[0] == "load":
-			self.loadProgress.setValue(math.ceil(progress[1]))
 		if progress[0] == "total":
 			self.totalProgress.setValue(math.ceil(progress[1]))
 		elif progress[0] == "file":
@@ -216,6 +227,8 @@ class AnimeWwise(QMainWindow):
 		if data["action"] == "error":
 			QMessageBox.warning(None, "Warning", data["content"]["msg"], QMessageBox.Ok)
 			state = data["content"]["state"]
+			if state == 1:
+				self.loadFilesButton.setEnabled(True)
 			if state == 2:
 				self.setExtractionState(True)
 		if data["action"] == "extract":
@@ -227,8 +240,17 @@ class AnimeWwise(QMainWindow):
 
 	# page 1 - config
 	def loadFiles(self):
-		if self.folders["input"] == "":
-			QMessageBox.warning(None, "Warning", "Missing input folder !", QMessageBox.Ok)
+		if self.loadType == "folder":
+			self.setFolder(folder="input")
+			files = []
+			if self.folders["input"]:
+				files = [os.path.join(self.folders["input"], f) for f in os.listdir(self.folders["input"]) if f.endswith(".pck")]
+		elif self.loadType == "file":
+			path = QFileDialog.getOpenFileName(self, "Select .pck File", "", "PCK Files (*.pck)", options=QFileDialog.Options())
+			files = [path[0]]
+
+		if len(files) == 0 or files[0] == "":
+			QMessageBox.warning(None, "Warning", "Nothing to load !", QMessageBox.Ok)
 			return
 
 		_map = self.assetMap.currentIndex()
@@ -242,7 +264,7 @@ class AnimeWwise(QMainWindow):
 
 		# why is all this required for threading damnit
 		self.backgroundThread = QThread()
-		self.backgroundWorker = BackgroundWorker("load", self.extract, {"input": self.folders["input"], "map": _map, "diff": self.folders["diff"]})
+		self.backgroundWorker = BackgroundWorker("load", self.extract, {"input": files, "map": _map, "diff": self.folders["diff"]})
 		self.backgroundWorker.moveToThread(self.backgroundThread)
 		self.backgroundThread.started.connect(self.backgroundWorker.run)
 		self.backgroundWorker.finished.connect(self.handleFinished)
@@ -316,7 +338,6 @@ class AnimeWwise(QMainWindow):
 			subfolder_size = self.computeFolderSize(subfolder)
 			total_size += subfolder_size
 
-		folder["size"] = total_size
 		return total_size
 
 	def updateAudioPreview(self, item, column):
@@ -344,7 +365,7 @@ class AnimeWwise(QMainWindow):
 				parent.addChild(folder_item)
 			self.addItems(folder_item, folder_content)
 
-		for file in sorted(element.get("files", [])):
+		for file in sorted(element.get("files", []), key=lambda x: x[0]):
 			file_meta = file[1]
 			file_item = QTreeWidgetItem([file[0], f'{round(file_meta["metadata"]["duration"], 1)} seconds', self.displaySize(file_meta["size"]), file_meta["source"], str(hex(file_meta["offset"]))])
 			file_item.setFlags(file_item.flags() | Qt.ItemIsUserCheckable)
@@ -412,6 +433,8 @@ class AnimeWwise(QMainWindow):
 		self.currentInput = None
 		self.setExtractionState(False)
 		self.tabs.setCurrentIndex(0)
+		self.totalProgress.setValue(0)
+		self.fileProgress.setValue(0)
 		print("Reset !")
 
 	def _appendText(self, text):
