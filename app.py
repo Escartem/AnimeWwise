@@ -54,6 +54,7 @@ class BackgroundWorker(QObject):
 	def run(self):
 		if self.action == "load":
 			print("Loading files and mapping if necessary...")
+			self.currentInput = self.input
 			fileStructure = self.extract.load_folder(self.map, self.input, self.diff, progress=self.progress.emit)
 			if fileStructure is None:
 				self.finished.emit({"action": "error", "content": {"msg": "Nothing found !", "state": 1}})
@@ -165,6 +166,7 @@ class AnimeWwise(QMainWindow):
 
 		action_group.triggered.connect(self.updateFormat)
 
+	# utils
 	def updateFormat(self, event):
 		text = event.text()
 		self.format = text.split(" ")[0]
@@ -183,6 +185,14 @@ class AnimeWwise(QMainWindow):
 		self.actionExtract_All.setEnabled(state)
 		self.actionExpand_all.setEnabled(state)
 		self.actionCollapse_all.setEnabled(state)
+
+	def displaySize(self, size):
+		if size < 1024:
+			return f"{size} b"
+		elif size > 1024 and size < 1048576:
+			return f"{size//1024} KiB"
+		elif size > 1048576:
+			return f"{size//1048576} MiB"
 
 	# workers
 	@pyqtSlot(list)
@@ -252,7 +262,7 @@ class AnimeWwise(QMainWindow):
 		result = self.searchFiles(self.fileStructure, search)
 		self.updateTreeWidget(result)
 
-	def searchFiles(self, data, substring, current_path=""):
+	def searchFiles(self, data, substring, current_path="", flatten=False):
 		result = {"folders": {}, "files": []}
 
 		result["files"] = [file for file in data.get("files", []) if substring in file[0]]
@@ -261,6 +271,12 @@ class AnimeWwise(QMainWindow):
 			subfolder_result = self.searchFiles(folder_data, substring)
 			if subfolder_result["files"] or subfolder_result["folders"]:
 				result["folders"][folder_name] = subfolder_result
+
+		if flatten:
+			while result["files"] == []:
+				if len(result["folders"]) == 0:
+					break
+				result = list(result["folders"].values())[0]
 
 		return result
 
@@ -273,7 +289,7 @@ class AnimeWwise(QMainWindow):
 	def updateTreeWidget(self, structure):
 		self.treeWidget.clear()
 		self.treeWidget.setColumnCount(4)
-		self.treeWidget.setHeaderLabels(["Name", "Duration", "Source", "Size", "Offset"])
+		self.treeWidget.setHeaderLabels(["Name", "Duration", "Compressed Size", "Source", "Offset"])
 		
 		self.addItems(None, structure)
 
@@ -290,16 +306,25 @@ class AnimeWwise(QMainWindow):
 		self.treeWidget.setDragDropMode(QAbstractItemView.NoDragDrop)
 		self.treeWidget.itemClicked.connect(self.updateAudioPreview)
 
+	def computeFolderSize(self, folder):
+		total_size = 0
+		
+		for file in folder.get("files", []):
+			total_size += file[1]["size"]
+
+		for subfolder_name, subfolder in folder.get("folders", {}).items():
+			subfolder_size = self.computeFolderSize(subfolder)
+			total_size += subfolder_size
+
+		folder["size"] = total_size
+		return total_size
+
 	def updateAudioPreview(self, item, column):
-		file_data = self.searchFiles(self.fileStructure, item.text(0))
+		file_data = self.searchFiles(self.fileStructure, item.text(0), flatten=True)
 
 		if file_data == {"folders": {}, "files": []}:
 			self.audioInfoLabel.setText("Click on an audio file to get more infos !")
 			return
-
-		# flatten path
-		while file_data["files"] == []:
-			file_data = list(file_data["folders"].values())[0]
 
 		meta = file_data["files"][0][1]["metadata"]
 
@@ -310,7 +335,7 @@ class AnimeWwise(QMainWindow):
 	def addItems(self, parent, element):
 		for folder_name in sorted(element.get("folders", {}).keys()):
 			folder_content = element["folders"][folder_name]
-			folder_item = QTreeWidgetItem([folder_name, "", "", "", ""])
+			folder_item = QTreeWidgetItem([folder_name, "", self.displaySize(self.computeFolderSize(folder_content)), "", ""])
 			folder_item.setFlags(folder_item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
 			folder_item.setCheckState(0, Qt.Unchecked)
 			if parent is None:
@@ -321,7 +346,7 @@ class AnimeWwise(QMainWindow):
 
 		for file in sorted(element.get("files", [])):
 			file_meta = file[1]
-			file_item = QTreeWidgetItem([file[0], f'{round(file_meta["metadata"]["duration"], 1)} seconds', file_meta["source"], str(file_meta["size"]), str(hex(file_meta["offset"]))])
+			file_item = QTreeWidgetItem([file[0], f'{round(file_meta["metadata"]["duration"], 1)} seconds', self.displaySize(file_meta["size"]), file_meta["source"], str(hex(file_meta["offset"]))])
 			file_item.setFlags(file_item.flags() | Qt.ItemIsUserCheckable)
 			file_item.setCheckState(0, Qt.Unchecked)
 			if parent is None:
@@ -335,7 +360,6 @@ class AnimeWwise(QMainWindow):
 
 		checked_items = []
 	
-		# todo: use file structure instead of tree view
 		def check_items(item, _all):
 			if item.checkState(0) == Qt.Checked or _all:
 				if item.text(1) != "":
@@ -350,7 +374,7 @@ class AnimeWwise(QMainWindow):
 
 		# yet another block of threading bs
 		self.backgroundThread = QThread()
-		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.folders["input"], "files": checked_items, "format": self.format, "output": self.folders["output"]})
+		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.currentInput, "files": checked_items, "format": self.format, "output": self.folders["output"]})
 		self.backgroundWorker.moveToThread(self.backgroundThread)
 		self.backgroundThread.started.connect(self.backgroundWorker.run)
 		self.backgroundWorker.finished.connect(self.handleFinished)
@@ -368,19 +392,24 @@ class AnimeWwise(QMainWindow):
 		while current_item is not None:
 			path.insert(0, current_item.text(0))
 			current_item = current_item.parent()
-		
+
+		meta = self.searchFiles(self.fileStructure, item.text(0), flatten=True)["files"][0]
+		name = meta[0]
+		meta = meta[1] # move inside
+
 		return {
 			"name": item.text(0),
-			"path": path[:-1] if path[0] in ["changed_files", "new_files"] else path[1:-1],
-			"source": item.text(2),
-			"offset": int(item.text(4), 16),
-			"size": int(item.text(3))
+			"path": path[:-1],
+			"source": meta["source"],
+			"offset": meta["offset"],
+			"size": meta["size"]
 		}
 
 	# misc
 	def resetApp(self):
 		self.resetTreeWidget()
 		self.extract.reset()
+		self.currentInput = None
 		self.setExtractionState(False)
 		self.tabs.setCurrentIndex(0)
 		print("Reset !")
