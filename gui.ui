@@ -241,9 +241,9 @@
      <widget class="QWidget" name="horizontalLayoutWidget">
       <property name="geometry">
        <rect>
-        <x>0</x>
+        <x>10</x>
         <y>580</y>
-        <width>1081</width>
+        <width>1061</width>
         <height>31</height>
        </rect>
       </property>
@@ -251,34 +251,7 @@
        <item>
         <widget class="QLabel" name="audioInfoLabel">
          <property name="text">
-          <string>sample_long_name.wem | Duration : 00:00 | Stereo (48000Hz)</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="audioPlayPadding">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="playAudioBtn">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Play</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="stopAudioBtn">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Stop</string>
+          <string>Click on an audio file to get more infos !</string>
          </property>
         </widget>
        </item>
@@ -366,7 +339,7 @@
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

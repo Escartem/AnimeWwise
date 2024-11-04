@@ -60,6 +60,7 @@ def parse_wwise(reader):
 		"channelLayout": None,
 		"channelType": None,
 		"codec": None,
+		"codecDisplay": None,
 		"layoutType": None,
 		"interleaveBlockSize": None,
 		"numSamples": None,
@@ -109,9 +110,20 @@ def parse_wwise(reader):
 	codec = codecs[metadata["format"]]
 
 	if codec not in ["PTADPCM", "VORBIS"]: # Platinum "PtADPCM" custom ADPCM for Wwise
-		raise Exception(f"unhandled codec -> {codec}")
+		print(f"unhandled codec -> {codec}")
 
 	metadata["codec"] = codec
+
+	# codec name
+	codecs_names = {
+		"PTADPCM": "Platinum 4-bit ADPCM",
+		"VORBIS": "Custom Vorbis"
+	}
+
+	if codec in codecs_names:
+		metadata["codecDisplay"] = codecs_names[codec]
+	else:
+		metadata["codecDisplay"] = codec
 
 	# parse more infos
 	if metadata["codec"] == "PTADPCM":
@@ -124,4 +136,3 @@ def parse_wwise(reader):
 	return metadata
 
 	# TODO: parse VORBIS
-	# TODO: rewrite codec ?

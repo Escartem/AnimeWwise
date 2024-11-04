@@ -138,6 +138,9 @@ class AnimeWwise(QMainWindow):
 		self.actionReset.triggered.connect(lambda: self.resetApp())
 		self.actionExit.triggered.connect(lambda: self.close())
 
+		self.actionExpand_all.triggered.connect(lambda: self.treeWidget.expandAll())
+		self.actionCollapse_all.triggered.connect(lambda: self.treeWidget.collapseAll())
+
 		self.actionExtract_Selected.triggered.connect(lambda: self.extractItems(False))
 		self.actionExtract_All.triggered.connect(lambda: self.extractItems(True))
 
@@ -196,6 +199,7 @@ class AnimeWwise(QMainWindow):
 		if data["action"] == "load":
 			self.fileStructure = data["content"]
 			self.updateTreeWidget(self.fileStructure)
+			self.loadFilesButton.setEnabled(True)
 			self.setExtractionState(True)
 			self.tabs.setCurrentIndex(1)
 			print("Done !")
@@ -224,6 +228,7 @@ class AnimeWwise(QMainWindow):
 			_map = None
 
 		self.resetTreeWidget()
+		self.loadFilesButton.setEnabled(False)
 
 		# why is all this required for threading damnit
 		self.backgroundThread = QThread()
@@ -262,6 +267,7 @@ class AnimeWwise(QMainWindow):
 	def resetTreeWidget(self):
 		self.treeWidget.clear()
 		self.fileStructure = {"folders": {}, "files": []}
+		self.audioInfoLabel.setText("Click on an audio file to get more infos !")
 		self.setExtractionState(False)
 
 	def updateTreeWidget(self, structure):
@@ -285,7 +291,21 @@ class AnimeWwise(QMainWindow):
 		self.treeWidget.itemClicked.connect(self.updateAudioPreview)
 
 	def updateAudioPreview(self, item, column):
-		print(item.text(0))
+		file_data = self.searchFiles(self.fileStructure, item.text(0))
+
+		if file_data == {"folders": {}, "files": []}:
+			self.audioInfoLabel.setText("Click on an audio file to get more infos !")
+			return
+
+		# flatten path
+		while file_data["files"] == []:
+			file_data = list(file_data["folders"].values())[0]
+
+		meta = file_data["files"][0][1]["metadata"]
+
+		# show meta
+		text = f'Infos for {item.text(0)} => Channels : {meta["channels"]} | Sample rate : {meta["sampleRate"]} Hz | Bitrate : {meta["avgBitrate"]} kbps | Codec : {meta["codecDisplay"]} | Layout type : {meta["layoutType"]}'
+		self.audioInfoLabel.setText(text)
 
 	def addItems(self, parent, element):
 		for folder_name in sorted(element.get("folders", {}).keys()):
@@ -301,7 +321,7 @@ class AnimeWwise(QMainWindow):
 
 		for file in sorted(element.get("files", [])):
 			file_meta = file[1]
-			file_item = QTreeWidgetItem([file[0], f'{round(file_meta["metadata"]["duration"], 2)} seconds', file_meta["source"], str(file_meta["size"]), str(hex(file_meta["offset"]))])
+			file_item = QTreeWidgetItem([file[0], f'{round(file_meta["metadata"]["duration"], 1)} seconds', file_meta["source"], str(file_meta["size"]), str(hex(file_meta["offset"]))])
 			file_item.setFlags(file_item.flags() | Qt.ItemIsUserCheckable)
 			file_item.setCheckState(0, Qt.Unchecked)
 			if parent is None:
@@ -312,10 +332,6 @@ class AnimeWwise(QMainWindow):
 	# page 3 - extraction
 	def extractItems(self, _all):
 		self.setFolder(folder="output")
-
-		if self.folders["output"] == "":
-			QMessageBox.warning(None, "Warning", "Missing output folder !", QMessageBox.Ok)
-			return
 
 		checked_items = []
 	
@@ -366,6 +382,7 @@ class AnimeWwise(QMainWindow):
 		self.resetTreeWidget()
 		self.extract.reset()
 		self.setExtractionState(False)
+		self.tabs.setCurrentIndex(0)
 		print("Reset !")
 
 	def _appendText(self, text):
