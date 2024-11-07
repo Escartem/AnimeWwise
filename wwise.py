@@ -1,5 +1,5 @@
 # wwise riff header parser
-# thanks to hcs and bnnm
+# thanks to hcs and bnnm work
 
 def parse_wwise(reader):
 	header = reader.ReadBytes(4)

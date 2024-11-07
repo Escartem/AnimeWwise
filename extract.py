@@ -25,10 +25,9 @@ class WwiseExtract:
 		self.steps = 1
 		self.mapper = None
 		if _map is not None:
-			self.mapper = Mapper(path(cwd, f"maps/{_map}"))
+			self.mapper = Mapper(path(cwd, f"maps/{_map}")) # TODO: load maps once
 		self.file_structure = {"folders": {}, "files": []}
 
-		# files = [f for f in os.listdir(folder_path) if f.endswith(".pck")]
 		hdiff_files = []
 		if diff_path != "":
 			hdiff_files = [f for f in os.listdir(diff_path) if f.endswith(".pck.hdiff")]

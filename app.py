@@ -54,7 +54,6 @@ class BackgroundWorker(QObject):
 	def run(self):
 		if self.action == "load":
 			print("Loading files and mapping if necessary...")
-			self.currentInput = self.input
 			fileStructure = self.extract.load_folder(self.map, self.input, self.diff, progress=self.progress.emit)
 			if fileStructure is None:
 				self.finished.emit({"action": "error", "content": {"msg": "Nothing found !", "state": 1}})
@@ -244,7 +243,10 @@ class AnimeWwise(QMainWindow):
 			self.setFolder(folder="input")
 			files = []
 			if self.folders["input"]:
-				files = [os.path.join(self.folders["input"], f) for f in os.listdir(self.folders["input"]) if f.endswith(".pck")]
+				if self.pckSubFold.isChecked():
+					files = [os.path.join(root, f) for root, dirs, files_in_dir in os.walk(self.folders["input"]) for f in files_in_dir if f.endswith(".pck")]
+				else:
+					files = [os.path.join(self.folders["input"], f) for f in os.listdir(self.folders["input"]) if f.endswith(".pck")]
 		elif self.loadType == "file":
 			path = QFileDialog.getOpenFileName(self, "Select .pck File", "", "PCK Files (*.pck)", options=QFileDialog.Options())
 			files = [path[0]]
@@ -252,6 +254,10 @@ class AnimeWwise(QMainWindow):
 		if len(files) == 0 or files[0] == "":
 			QMessageBox.warning(None, "Warning", "Nothing to load !", QMessageBox.Ok)
 			return
+
+		self.currentInput = self.folders["input"]
+		if not self.folders["input"]:
+			self.currentInput = os.path.dirname(path[0])
 
 		_map = self.assetMap.currentIndex()
 		if _map != 0:
