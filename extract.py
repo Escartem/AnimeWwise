@@ -17,15 +17,30 @@ class WwiseExtract:
 	def __init__(self):
 		self.allocator = Allocator()
 		self.hdiff_dir = None
+		self.maps = {}
 
 	### loading files ###
+
+	def load_map(self, _map):
+		map_name = _map.split(".")[0]
+
+		if map_name not in self.maps or self.maps[map_name] is None:
+			print("Map load required !")
+			mapper = Mapper(path(cwd, f"maps/{_map}"))
+			self.maps[map_name] = mapper
+		else:
+			print("Mapping already loaded, skipping")
+
+		return self.maps[map_name]
 
 	def load_folder(self, _map, files, diff_path, progress):
 		self.progress = progress
 		self.steps = 1
+
 		self.mapper = None
 		if _map is not None:
-			self.mapper = Mapper(path(cwd, f"maps/{_map}")) # TODO: load maps once
+			self.mapper = self.load_map(_map)
+		
 		self.file_structure = {"folders": {}, "files": []}
 
 		hdiff_files = []
@@ -345,8 +360,10 @@ class WwiseExtract:
 		self.progress(["file", current * 100 // total])
 
 	def reset(self):
-		if self.mapper is not None:
-			self.mapper.reset()
+		self.mapper = None
+		for e in self.maps.values():
+			e.reset()
+		self.maps.clear()
 		self.allocator.free_mem()
 		if self.hdiff_dir is not None:
 			self.hdiff_dir.cleanup()
