@@ -79,9 +79,7 @@
        <item>
         <widget class="QLabel" name="paddingB">
          <property name="text">
-          <string>
-
-</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -114,11 +112,7 @@
          <item>
           <widget class="QLabel" name="paddingA">
            <property name="text">
-            <string>
-
-
-
-</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -192,7 +186,7 @@
             <rect>
              <x>10</x>
              <y>10</y>
-             <width>1041</width>
+             <width>1166</width>
              <height>111</height>
             </rect>
            </property>
@@ -256,9 +250,7 @@ Subfolders are disabled in this mode, make sure to be in the correct place. For 
        <item>
         <widget class="QLabel" name="paddingC">
          <property name="text">
-          <string>
-
-</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -279,9 +271,7 @@ Subfolders are disabled in this mode, make sure to be in the correct place. For 
        <item>
         <widget class="QLabel" name="paddingD">
          <property name="text">
-          <string>
-
-</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -297,9 +287,7 @@ Subfolders are disabled in this mode, make sure to be in the correct place. For 
          <item>
           <widget class="QLabel" name="paddingE">
            <property name="text">
-            <string>
-
-</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -313,9 +301,7 @@ Subfolders are disabled in this mode, make sure to be in the correct place. For 
          <item>
           <widget class="QLabel" name="paddingF">
            <property name="text">
-            <string>
-
-</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -460,7 +446,7 @@ Subfolders are disabled in this mode, make sure to be in the correct place. For 
      <x>0</x>
      <y>0</y>
      <width>1100</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
