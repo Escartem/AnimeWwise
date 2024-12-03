@@ -83,7 +83,7 @@ class AnimeWwise(QMainWindow):
 		self.format = "wav"
 		self.fileStructure = {"folders": {}, "files": []}
 		self.setupActions()
-		# sys.stdout = TextEditStream(self.console)
+		sys.stdout = TextEditStream(self.console)
 		self.extract = extract.WwiseExtract()
 		self.checkUpdates()
 
