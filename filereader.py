@@ -8,9 +8,11 @@ class FileReader:
 	File reader for files, not much too say
 	"""
 
-	def __init__(self, file, endianness:str):
+	def __init__(self, file, endianness:str, name:str=None):
 		self.stream = file
 		self.endianness = endianness
+		if name:
+			self.name = name
 
 	def _read(self, mode:str, bufferLength:int, endianness:str=None) -> bytes:
 		# endianness override
@@ -76,3 +78,8 @@ class FileReader:
 
 	def GetRemainingLength(self) -> int:
 		return self.GetStreamLength() - self.GetBufferPos()
+
+	def GetName(self) -> str:
+		if self.name:
+			return self.name
+		return ""

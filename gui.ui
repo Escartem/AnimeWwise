@@ -186,8 +186,8 @@
             <rect>
              <x>10</x>
              <y>10</y>
-             <width>1166</width>
-             <height>111</height>
+             <width>1041</width>
+             <height>131</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="hdiffGrid">
@@ -232,6 +232,9 @@ Subfolders are disabled in this mode, make sure to be in the correct place. For 
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
               </property>
              </widget>
             </item>

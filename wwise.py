@@ -2,60 +2,14 @@
 # thanks to hcs and bnnm work
 
 def parse_wwise(reader):
-	header = reader.ReadBytes(4)
-
-	# endian check header
-	if header == b"RIFX":
-		reader.endianness = "big"
-	elif header == b"RIFF":
-		reader.endianness = "little"
-	else:
-		raise Exception("invalid header")
-
-	# additional check
-	reader.SetBufferPos(0x08)
-	check = reader.ReadBytes(4)
-
-	if check != b"WAVE" and check != "XWMA":
-		raise Exception("invalid file")
-
-	# read chunks
-	reader.SetBufferPos(0x0C)
-
-	chunks = {}
-
-	while reader.GetBufferPos() < reader.GetStreamLength():
-		# relevants chunks types
-		# "fmt "
-		# "data"
-		# "JUNK"
-
-		chunk_type = reader.ReadBytes(4)
-
-		if chunk_type not in [b"fmt ", b"JUNK", b"data"]:
-			raise Exception("invalid chunk")
-
-		formatted_chunk_type = chunk_type.decode("utf-8").replace(" ", "")
-		chunk_length = reader.ReadUInt32()
-		chunks[formatted_chunk_type] = {
-			"length": chunk_length,
-			"offset": reader.GetBufferPos(),
-			"data": reader.ReadBytes(chunk_length)
-		}
-
-	# reader fmt header
-	if chunks["fmt"]["length"] < 0x10:
-		raise Exception("invalid fmt chunk length")
-
-	reader.SetBufferPos(chunks["fmt"]["offset"])
-
+	# default meta config
 	metadata = {
-		"format": reader.ReadUInt16(),
-		"channels": reader.ReadUInt16(),
-		"sampleRate": reader.ReadUInt32(),
-		"avgBitrate": reader.ReadUInt32(),
-		"blockSize": reader.ReadUInt16(),
-		"bitsPerSample": reader.ReadUInt16(),
+		"format": 0,
+		"channels": 0,
+		"sampleRate": 0,
+		"avgBitrate": 0,
+		"blockSize": 0,
+		"bitsPerSample": 0,
 		"extraSize": 0,
 		"channelLayout": None,
 		"channelType": None,
@@ -64,8 +18,69 @@ def parse_wwise(reader):
 		"layoutType": None,
 		"interleaveBlockSize": None,
 		"numSamples": None,
-		"duration": None
+		"duration": 0
 	}
+
+	if reader.GetStreamLength() == 0:
+		print(f"[WARNING] null stream size at {reader.GetName()}, unreadable block")
+		return metadata
+
+	header = reader.ReadBytes(4)
+
+	# endian check header
+	if header == b"RIFX":
+		reader.endianness = "big"
+	elif header == b"RIFF":
+		reader.endianness = "little"
+	else:
+		print(f"[WARNING] invalid header {header} at {reader.GetName()}, assuming unreadable")
+		return metadata
+
+	# additional check
+	reader.SetBufferPos(0x08)
+	check = reader.ReadBytes(4)
+
+	if check != b"WAVE" and check != "XWMA":
+		print(f"[WARNING] invalid check mark {check}, assuming unreadable")
+		return metadata
+
+	# read chunks
+	reader.SetBufferPos(0x0C)
+
+	chunks = {}
+
+	while reader.GetBufferPos() < reader.GetStreamLength():
+		chunk_type = reader.ReadBytes(4)
+
+		if chunk_type not in [b"fmt ", b"JUNK", b"data", b"akd ", b"cue ", b"LIST", b"smpl"]:
+			print(f"[WARNING] unexpected chunk {chunk_type} at {reader.GetName()}")
+
+		formatted_chunk_type = chunk_type.decode("utf-8").replace(" ", "")
+		chunk_length = reader.ReadUInt32()
+
+		if chunk_type == b"data" and chunk_length > reader.GetRemainingLength():
+			chunk_length = reader.GetRemainingLength()
+
+		chunks[formatted_chunk_type] = {
+			"length": chunk_length,
+			"offset": reader.GetBufferPos(),
+			"data": reader.ReadBytes(chunk_length)
+		}
+
+	# reader fmt header
+	fmt_length = chunks["fmt"]["length"]
+	if fmt_length < 0x10:
+		print(f"[WARNING] invalid fmt chunk length {fmt_length} at {reader.GetName()}, skipping")
+		return metadata
+
+	reader.SetBufferPos(chunks["fmt"]["offset"])
+
+	metadata["format"] = reader.ReadUInt16()
+	metadata["channels"] = reader.ReadUInt16()
+	metadata["sampleRate"] = reader.ReadUInt32()
+	metadata["avgBitrate"] = reader.ReadUInt32()
+	metadata["blockSize"] = reader.ReadUInt16()
+	metadata["bitsPerSample"] = reader.ReadUInt16()
 
 	if chunks["fmt"]["length"] > 0x10 and metadata["format"] != 0x0165 and metadata["format"] != 0x0166:
 		metadata["extraSize"] = reader.ReadUInt16()
@@ -78,7 +93,8 @@ def parse_wwise(reader):
 			metadata["channelLayout"] = metadata["channelLayout"] >> 12
 
 	if metadata["format"] == 0x0166:
-		raise Exception("XMA2WAVEFORMATEX in fmt")
+		print(f"[WARNING] XMA2WAVEFORMATEX in fmt at {reader.GetName()}")
+		return metadata
 
 	# parse codec
 	codecs = {
@@ -101,16 +117,17 @@ def parse_wwise(reader):
 		0x8311: "PTADPCM"
 	}
 
-	# genshin should be PTADPCM
+	# genshin should be *mostly* PTADPCM
 	# hsr and zzz should be VORBIS
 
 	if metadata["format"] not in codecs:
-		raise Exception("unknown codec")
+		print(f'[WARNING] unknown codec {metadata["format"]} at {reader.GetName()}')
+		return metadata
 
 	codec = codecs[metadata["format"]]
 
 	if codec not in ["PTADPCM", "VORBIS"]: # Platinum "PtADPCM" custom ADPCM for Wwise
-		print(f"unhandled codec -> {codec}")
+		print(f"[WARNING] unhandled codec {codec}, need to implement this later")
 
 	metadata["codec"] = codec
 

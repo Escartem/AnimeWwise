@@ -153,7 +153,7 @@ class WwiseExtract:
 			}
 
 			wem_data = data[file_data["offset"]:file_data["offset"]+file_data["size"]]
-			parsed_wem = wwise.parse_wwise(FileReader(io.BytesIO(wem_data), "little"))
+			parsed_wem = wwise.parse_wwise(FileReader(io.BytesIO(wem_data), "little", name=f"{file[0]}:{file[1]}"))
 
 			file_data["metadata"] = parsed_wem
 
