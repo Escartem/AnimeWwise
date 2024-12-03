@@ -142,14 +142,50 @@ def parse_wwise(reader):
 	else:
 		metadata["codecDisplay"] = codec
 
-	# parse more infos
+	# parse duration
 	if metadata["codec"] == "PTADPCM":
 		metadata["layoutType"] = "interleave"
 		metadata["interleaveBlockSize"] = metadata["blockSize"] // metadata["channels"]
 
 		metadata["numSamples"] = int((chunks["data"]["length"] / (metadata["channels"] * metadata["interleaveBlockSize"])) * (2 + (metadata["interleaveBlockSize"] - 0x05) * 2))
 		metadata["duration"] = metadata["numSamples"] / metadata["sampleRate"]
+	
+	elif metadata["codec"] == "VORBIS":
+		if (metadata["blockSize"] != 0 or metadata["bitsPerSample"] != 0):
+			print(f"[WARNING] worbis type at {reader.GetName()}, skipping")
+			return metadata
+
+		if "vorb" in chunks:
+			# vorb chunk only in wwise earlier to 2012, therefore impossible for mihoyo games
+			print(f"[WARNING] found vorb chunk at {reader.GetName()}, is this the correct game ?")
+			return metadata
+
+		extra_offset = chunks["fmt"]["offset"] + 0x18
+
+		if metadata["extraSize"] != 0x30:
+			print(f"[WARNING] unknown extra wwise size at {reader.GetName()}, skipping")
+			return metadata
+
+		data_offset = 0x10
+		blocks_offset = 0x28
+		# define header to type 2, packet to modified and codebook to aoTuV603, required ?
+
+		metadata["numSamples"] = reader.ReadInt32(extra_offset)
+		setup_offset = reader.ReadUInt32(extra_offset + data_offset)
+		audio_offset = reader.ReadUInt32(extra_offset + data_offset + 0x04)
+
+		print(metadata["numSamples"])
+		print(setup_offset)
+		print(audio_offset)
+
+		block_size_1_exp = reader.ReadUInt8(extra_offset + blocks_offset)
+		block_size_0_exp = reader.ReadUInt8(extra_offset + blocks_offset + 0x01)
+
+		chunks["data"]["offset"] -= audio_offset
+
+		# ignore packets update and codebooks parse attempts, not implemented
+
+		metadata["layoutType"] = "none"
+		metadata["duration"] = metadata["numSamples"] / metadata["sampleRate"]
 
 	return metadata
-
-	# TODO: parse VORBIS
