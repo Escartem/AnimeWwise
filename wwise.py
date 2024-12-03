@@ -58,7 +58,7 @@ def parse_wwise(reader):
 		formatted_chunk_type = chunk_type.decode("utf-8").replace(" ", "")
 		chunk_length = reader.ReadUInt32()
 
-		if chunk_type == b"data" and chunk_length > reader.GetRemainingLength():
+		if chunk_length > reader.GetRemainingLength():
 			chunk_length = reader.GetRemainingLength()
 
 		chunks[formatted_chunk_type] = {
@@ -174,17 +174,13 @@ def parse_wwise(reader):
 		setup_offset = reader.ReadUInt32(extra_offset + data_offset)
 		audio_offset = reader.ReadUInt32(extra_offset + data_offset + 0x04)
 
-		print(metadata["numSamples"])
-		print(setup_offset)
-		print(audio_offset)
-
 		block_size_1_exp = reader.ReadUInt8(extra_offset + blocks_offset)
 		block_size_0_exp = reader.ReadUInt8(extra_offset + blocks_offset + 0x01)
+		# if both exp are equals and extra size is 0x30, then reset packet type to standard
 
 		chunks["data"]["offset"] -= audio_offset
 
 		# ignore packets update and codebooks parse attempts, not implemented
-
 		metadata["layoutType"] = "none"
 		metadata["duration"] = metadata["numSamples"] / metadata["sampleRate"]
 

@@ -46,6 +46,14 @@ class WwiseExtract:
 		hdiff_files = []
 		if diff_path != "":
 			hdiff_files = [f for f in os.listdir(diff_path) if f.endswith(".pck.hdiff")]
+			
+			# TODO: hdiff mode will only use .hdiff files and ignore .pck even in the update folder, i need to implement it, eventually
+
+			# remove alone pck / hdiff
+			base_files = [os.path.basename(f) for f in files]
+			hdiff_files = [f for f in hdiff_files if os.path.basename(f.replace(".hdiff", "")) in base_files]
+			base_hfiles = [os.path.basename(f) for f in hdiff_files]
+			files = [f for f in files if f"{os.path.basename(f)}.hdiff" in base_hfiles]
 
 		if len(files) == 0:
 			return None
@@ -72,11 +80,13 @@ class WwiseExtract:
 	def get_wems(self, data, filename, hdiff):
 		reader = FileReader(io.BytesIO(data), "little")
 		files = wavescan.get_data(reader, filename)
+		
 		if hdiff is not None:
 			with open(hdiff, "rb") as f:
 				hdiff_data = f.read()
 				f.close()
-			hdiff_files = self.get_hdiff_files(data, hdiff_data, filename)
+			
+			hdiff_files, data = self.get_hdiff_files(data, hdiff_data, filename)
 			files = self.compare_diff(files, hdiff_files)
 
 		self.map_names(files, filename, hdiff is not None, data)
@@ -114,6 +124,10 @@ class WwiseExtract:
 
 		call(args)
 
+		if not os.path.exists(path(working_dir.name, "patch.pck")):
+			print(f"[ERROR] failed to patch {source_name}, skipping")
+			return []
+
 		with open(path(working_dir.name, "patch.pck"), "rb") as f:
 			data = f.read()
 			f.close()
@@ -127,7 +141,7 @@ class WwiseExtract:
 
 		working_dir.cleanup()
 
-		return files
+		return files, data
 	
 	def map_names(self, files, filename, hdiff=False, data=None, skip_source=True):
 		# disable skip source if required
@@ -153,7 +167,7 @@ class WwiseExtract:
 			}
 
 			wem_data = data[file_data["offset"]:file_data["offset"]+file_data["size"]]
-			parsed_wem = wwise.parse_wwise(FileReader(io.BytesIO(wem_data), "little", name=f"{file[0]}:{file[1]}"))
+			parsed_wem = wwise.parse_wwise(FileReader(io.BytesIO(wem_data), "little", name=f"{file[3]}:{file[0]}:{file[1]}"))
 
 			file_data["metadata"] = parsed_wem
 
