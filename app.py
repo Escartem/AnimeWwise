@@ -98,7 +98,7 @@ class AnimeWwise(QMainWindow):
 			latestVersionReq = get("https://raw.githubusercontent.com/Escartem/AnimeWwise/master/version.json")
 			
 			if latestVersionReq.status_code == 200:
-				latestVersion = json.loads(latestMaps.text)
+				latestVersion = json.loads(latestVersionReq.text)
 
 			if currentVersion["version"] < latestVersion["version"]:
 				print("Update found !")
