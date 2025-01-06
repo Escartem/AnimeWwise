@@ -71,12 +71,12 @@ class WwiseExtract:
 
 		return self.file_structure
 
-	def load_file(self, _input, hdiff, diff_path):
+	def load_file(self, _input, hdiff, base_path):
 		with open(_input, "rb") as f:
 			data = f.read()
 			f.close()
-		print(diff_path)
-		self.get_wems(data, os.path.basename(_input), hdiff, os.path.relpath(_input, start=diff_path))
+
+		self.get_wems(data, os.path.basename(_input), hdiff, os.path.relpath(_input, start=base_path))
 
 	def get_wems(self, data, filename, hdiff, relpath):
 		reader = FileReader(io.BytesIO(data), "little")
