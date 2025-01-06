@@ -42,6 +42,7 @@ class BackgroundWorker(QObject):
 		self.extract = extract
 
 		if action == "load":
+			self.base = data["base"]
 			self.input = data["input"]
 			self.map = data["map"]
 			self.diff = data["diff"]
@@ -54,7 +55,7 @@ class BackgroundWorker(QObject):
 	def run(self):
 		if self.action == "load":
 			print("Loading files and mapping if necessary...")
-			fileStructure = self.extract.load_folder(self.map, self.input, self.diff, progress=self.progress.emit)
+			fileStructure = self.extract.load_folder(self.map, self.input, self.diff, self.base, progress=self.progress.emit)
 			if fileStructure is None:
 				self.finished.emit({"action": "error", "content": {"msg": "Nothing found !", "state": 1}})
 				print("Nothing found !")
@@ -270,7 +271,7 @@ class AnimeWwise(QMainWindow):
 
 		# why is all this required for threading damnit
 		self.backgroundThread = QThread()
-		self.backgroundWorker = BackgroundWorker("load", self.extract, {"input": files, "map": _map, "diff": self.folders["diff"]})
+		self.backgroundWorker = BackgroundWorker("load", self.extract, {"base": self.folders["input"], "input": files, "map": _map, "diff": self.folders["diff"]})
 		self.backgroundWorker.moveToThread(self.backgroundThread)
 		self.backgroundThread.started.connect(self.backgroundWorker.run)
 		self.backgroundWorker.finished.connect(self.handleFinished)

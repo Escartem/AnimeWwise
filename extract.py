@@ -33,7 +33,7 @@ class WwiseExtract:
 
 		return self.maps[map_name]
 
-	def load_folder(self, _map, files, diff_path, progress):
+	def load_folder(self, _map, files, diff_path, base_path, progress):
 		self.progress = progress
 		self.steps = 1
 
@@ -67,17 +67,18 @@ class WwiseExtract:
 			hdiff = None
 			if f"{os.path.basename(file)}.hdiff" in hdiff_files:
 				hdiff = path(diff_path, hdiff_files[hdiff_files.index(f"{os.path.basename(file)}.hdiff")])
-			self.load_file(file, hdiff)
+			self.load_file(file, hdiff, base_path)
 
 		return self.file_structure
 
-	def load_file(self, _input, hdiff):
+	def load_file(self, _input, hdiff, diff_path):
 		with open(_input, "rb") as f:
 			data = f.read()
 			f.close()
-		self.get_wems(data, os.path.basename(_input), hdiff)
+		print(diff_path)
+		self.get_wems(data, os.path.basename(_input), hdiff, os.path.relpath(_input, start=diff_path))
 
-	def get_wems(self, data, filename, hdiff):
+	def get_wems(self, data, filename, hdiff, relpath):
 		reader = FileReader(io.BytesIO(data), "little")
 		files = wavescan.get_data(reader, filename)
 		
@@ -89,7 +90,7 @@ class WwiseExtract:
 			hdiff_files, data = self.get_hdiff_files(data, hdiff_data, filename)
 			files = self.compare_diff(files, hdiff_files)
 
-		self.map_names(files, filename, hdiff is not None, data)
+		self.map_names(files, filename, relpath, hdiff is not None, data)
 
 	def compare_diff(self, old, new):
 		old_dict = {file[0]:file[2] for file in old}
@@ -143,7 +144,7 @@ class WwiseExtract:
 
 		return files, data
 	
-	def map_names(self, files, filename, hdiff=False, data=None, skip_source=True):
+	def map_names(self, files, filename, relpath, hdiff=False, data=None, skip_source=True):
 		# disable skip source if required
 		mapper = self.mapper
 		base = self.file_structure
@@ -160,7 +161,7 @@ class WwiseExtract:
 				key = None
 
 			file_data = {
-				"source": file[3],
+				"source": relpath,
 				"size": file[2],
 				"offset": file[1],
 				"metadata": {}
