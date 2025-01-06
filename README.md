@@ -6,7 +6,7 @@ An easy to use tool to extract audio from some anime games, with the original fi
 
 # Usage
 
-1. Get the repo by [downloading it](https://github.com/Escartem/WwiseExtract/archive/refs/heads/master.zip) or cloning it (`git clone https://github.com/Escartem/WwiseExtract`)
+1. Get the repo by [downloading it](https://github.com/Escartem/WwiseExtract/archive/refs/heads/master.zip) or cloning it (`git clone https://github.com/Escartem/AnimeWwise`)
 > [!NOTE]
 > This project uses ffmpeg version *3.4.2* which is the latest under 50MB. But it is also slower, if you want to slightly improve extraction speed, consider updating the ffmpeg binary to a [newer version](https://github.com/BtbN/FFmpeg-Builds/releases)
 2. Install dependencies -> `pip install -r requirements.txt`
