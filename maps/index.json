@@ -1,17 +1,19 @@
-{"maps": [
-	{
-		"name": "hk4e.map",
-		"game": "Genshin Impact",
-		"version": "5.2"
-	},
-	{
-		"name": "hkrpg.map",
-		"game": "Star Rail",
-		"version": "2.6"
-	},
-	{
-		"name": "nap.map",
-		"game": "Zenless Zone Zero",
-		"version": "1.2"
-	}
-]}
+{
+    "maps": [
+        {
+            "name": "hk4e.map",
+            "game": "Genshin Impact",
+            "version": "5.2"
+        },
+        {
+            "name": "hkrpg.map",
+            "game": "Star Rail",
+            "version": "2.6"
+        },
+        {
+            "name": "nap.map",
+            "game": "Zenless Zone Zero",
+            "version": "1.2"
+        }
+    ]
+}

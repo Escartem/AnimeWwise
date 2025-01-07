@@ -2,14 +2,16 @@ import os
 import sys
 import json
 import math
+import time
 import extract
 import platform
+import urllib
 import webbrowser
 from PyQt5 import uic
 from requests import get
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread, QMetaType, Qt
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView, QAbstractItemView, QTreeWidgetItem, QAction, QActionGroup
+from PyQt5.QtWidgets import QDesktopWidget, QDialog, QMessageBox, QMainWindow, QApplication, QFileDialog, QHeaderView, QAbstractItemView, QTreeWidgetItem, QAction, QActionGroup
 
 QMetaType.type("QTextCursor")
 
@@ -70,6 +72,112 @@ class BackgroundWorker(QObject):
 			self.extract.extract_files(self.input, self.files, self.output, self.format, progress=self.progress.emit)
 			self.finished.emit({"action": "extract"})
 
+class UpdaterWorker(QObject):
+	finished = pyqtSignal(bool)
+	progress = pyqtSignal(list)
+
+	def __init__(self):
+		super().__init__()
+
+	def run(self):
+		try:
+			# know current and latest maps
+			self.progress.emit([0, "Fetching index..."])
+			ver = lambda s: int(s.replace(".", ""))
+
+			index = open("maps/index.json", "r")
+			currentMaps = json.loads(index.read())
+			index.close()
+
+			latestMaps = get("https://raw.githubusercontent.com/Escartem/AnimeWwise/master/maps/index.json")
+
+			if latestMaps.status_code == 200:
+				latestMaps = json.loads(latestMaps.text)
+
+			# do each game
+			n_games = len(latestMaps["maps"])
+			game_size = 95 // n_games
+			for i in range(n_games):
+				current = currentMaps["maps"][i]
+				latest = latestMaps["maps"][i]
+
+				if ver(current["version"]) < ver(latest["version"]):
+					self.progress.emit([5 + game_size * i, f"Updating {latest["game"]} to {latest["version"]}"])
+
+					name = f"maps/{latest['name']}"
+
+					url = f"https://raw.githubusercontent.com/Escartem/AnimeWwise/master/{name}"
+					urllib.request.urlretrieve(url, "maps/temp.map")
+
+					if os.path.isfile(name):
+						os.remove(name)
+					os.rename("maps/temp.map", name)
+
+					# update index
+					currentMaps["maps"][i]["version"] = latest["version"]
+
+			# save new index
+			index = open("maps/index.json", "w+")
+			index.write(json.dumps(currentMaps, indent=4))
+			index.close()
+
+			index_sum = sum([ver(e["version"]) for e in currentMaps["maps"]])
+
+			with open("version.json", "r+") as f:
+				data = json.loads(f.read())
+				data["mapsVersion"] = index_sum
+				f.seek(0)
+				f.write(json.dumps(data, indent=4))
+				f.truncate()
+				f.close()
+
+			# done
+			self.progress.emit([100, "Update finished ! The program will start shortly..."])
+		except Exception as e:
+			# failure :(
+			self.progress.emit([100, f"Update failed ! The program will start shortly... | {e}"])
+
+		time.sleep(3)
+		self.finished.emit(True)
+
+
+class Updater(QDialog):
+	def __init__(self):
+		super(Updater, self).__init__()
+		uic.loadUi("updater.ui", self)
+		self.setWindowFlag(Qt.WindowCloseButtonHint, False)
+		self.center()
+		self.update()
+
+	def center(self):
+		qr = self.frameGeometry()
+		cp = QDesktopWidget().availableGeometry().center()
+		qr.moveCenter(cp)
+		self.move(qr.topLeft())
+
+	def update(self):
+		self.backgroundThread = QThread()
+		self.backgroundWorker = UpdaterWorker()
+		self.backgroundWorker.moveToThread(self.backgroundThread)
+		self.backgroundThread.started.connect(self.backgroundWorker.run)
+		self.backgroundWorker.finished.connect(self.updateFinished)
+		self.backgroundWorker.finished.connect(self.backgroundThread.quit)
+		self.backgroundWorker.finished.connect(self.backgroundWorker.deleteLater)
+		self.backgroundThread.finished.connect(self.backgroundThread.deleteLater)
+
+		self.backgroundWorker.progress.connect(self.updateProgress)
+		self.backgroundThread.start()
+
+	@pyqtSlot(bool)
+	def updateFinished(self):
+		self.close()
+
+	@pyqtSlot(list)
+	def updateProgress(self, data):
+		self.progressBar.setValue(data[0])
+		if len(data) == 2:
+			self.status.setText(data[1])
+
 class AnimeWwise(QMainWindow):
 	def __init__(self):
 		super(AnimeWwise, self).__init__()
@@ -104,10 +212,12 @@ class AnimeWwise(QMainWindow):
 
 			if currentVersion["version"] < latestVersion["version"]:
 				print("Update found !")
-				QMessageBox.information(None, "Info", "Newer version of the program is availble, please update.", QMessageBox.Ok)
+				QMessageBox.information(None, "Info", "Newer version of the program is availble, please update it.", QMessageBox.Ok)
 			elif currentVersion["mapsVersion"] < latestVersion["mapsVersion"]:
 				print("Update found !")
-				QMessageBox.information(None, "Info", "Newer version of the mappings are availble, please update the program.", QMessageBox.Ok)
+				QMessageBox.information(None, "Info", "Newer version of the mappings are availble, the program will update them now.", QMessageBox.Ok)
+				self.updaterWindow = Updater()
+				self.updaterWindow.exec_()
 			else:
 				print("No updates")
 		except:
