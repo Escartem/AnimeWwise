@@ -255,6 +255,7 @@ class AnimeWwise(QMainWindow):
 					files = [os.path.join(self.folders["input"], f) for f in os.listdir(self.folders["input"]) if f.endswith(".pck")]
 		elif self.loadType == "file":
 			path = QFileDialog.getOpenFileName(self, "Select .pck File", "", "PCK Files (*.pck)", options=QFileDialog.Options())
+			self.folders["input"] = os.path.dirname(path[0])
 			files = [path[0]]
 
 		if len(files) == 0 or files[0] == "":

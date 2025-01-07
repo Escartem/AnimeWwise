@@ -293,7 +293,7 @@ class WwiseExtract:
 				if os.path.isfile(hdiff_path):
 					load_path = hdiff_path
 			
-			self.allocator.load_file(load_path)
+			self.allocator.load_file(load_path, source)
 
 			# extract every file from this one
 			for file in [file for file in files if file["source"] == source]:
