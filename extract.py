@@ -11,7 +11,12 @@ from filereader import FileReader
 
 cwd = os.getcwd()
 path = lambda *args: os.path.join(*args)
-call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+def call(args):
+	try:
+		subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+	except Exception as e:
+		print(f"[WARNING] failed to extract, {e}")
 
 class WwiseExtract:
 	def __init__(self):
@@ -169,6 +174,9 @@ class WwiseExtract:
 
 			wem_data = data[file_data["offset"]:file_data["offset"]+file_data["size"]]
 			parsed_wem = wwise.parse_wwise(FileReader(io.BytesIO(wem_data), "little", name=f"{file[3]}:{file[0]}:{file[1]}"))
+
+			if not parsed_wem:
+				continue
 
 			file_data["metadata"] = parsed_wem
 
