@@ -87,6 +87,8 @@ class AnimeWwise(QMainWindow):
 		sys.stdout = TextEditStream(self.console)
 		self.extract = extract.WwiseExtract()
 		self.checkUpdates()
+		self.totalProgress.setMaximum(10000)
+		self.fileProgress.setMaximum(10000)
 
 		# utils
 		self.selectFolder = lambda: QFileDialog.getExistingDirectory(self, "Select Folder")
@@ -210,10 +212,13 @@ class AnimeWwise(QMainWindow):
 	# workers
 	@pyqtSlot(list)
 	def progressBarSlot(self, progress):
+		progress_value = math.ceil(progress[1]*100)
 		if progress[0] == "total":
-			self.totalProgress.setValue(math.ceil(progress[1]))
+			self.totalProgress.setValue(progress_value)
+			self.totalProgress.setFormat("%.02f %%" % (progress_value / 100))
 		elif progress[0] == "file":
-			self.fileProgress.setValue(math.ceil(progress[1]))
+			self.fileProgress.setValue(progress_value)
+			self.fileProgress.setFormat("%.02f %%" % (progress_value / 100)) 
 
 	@pyqtSlot(dict)
 	def handleFinished(self, data):

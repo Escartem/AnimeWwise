@@ -371,8 +371,8 @@ class WwiseExtract:
 
 	def update_progress(self, current, total, step):
 		base = 100 / self.steps
-		self.progress(["total", current * base // total + base * (step - 1)])
-		self.progress(["file", current * 100 // total])
+		self.progress(["total", current * base / total + base * (step - 1)])
+		self.progress(["file", current * 100 / total])
 
 	def reset(self):
 		self.mapper = None
