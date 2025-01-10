@@ -102,7 +102,7 @@ class UpdaterWorker(QObject):
 				latest = latestMaps["maps"][i]
 
 				if ver(current["version"]) < ver(latest["version"]):
-					self.progress.emit([5 + game_size * i, f"Updating {latest["game"]} to {latest["version"]}"])
+					self.progress.emit([5 + game_size * i, f'Updating {latest["game"]} to {latest["version"]}'])
 
 					name = f"maps/{latest['name']}"
 
