@@ -42,3 +42,13 @@ The program has been tested and proved to be very efficient with extraction (not
 # Contribute
 
 Feel free to contribute to this project as much as you want, a share would be very appreciated aswell, I'll be glad to know if this helped anyone <3
+
+# Credits
+
+- [@Razmoth](https://github.com/Razmoth) - help on figuring out keys parsing to recover names for genshin and zzz
+- [@Dimbreath](https://github.com/Dimbreath) - AnimeGameData, TurnBasedGameData and ZZZData
+- [@Kei-Luna](https://github.com/Kei-Luna) - instructions on recovering names for genshin music
+- [@davispuh](https://github.com/davispuh) - star rail keys bruteforce tool
+- [@bnnm](https://github.com/bnnm) - wwise audio exploration tool
+- @hcs - wwise audio extraction script
+- [@vgmstream](https://github.com/vgmstream) and their contributors - wwise headers parsing
