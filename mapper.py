@@ -15,15 +15,12 @@ class Mapper:
 		reader.ReadBytes(2)
 
 		map_version = reader.ReadBytes(2)
-		if map_version == b"\x56\x31":
-			print(f"Warning: you are using an old version of the mapping that is no longer supported, please use a newer one or download an older version of this tool.")
-			raise Exception("outdated mapping")
-		elif map_version  == b"\x56\x32":
-			self.reader = reader
-			self.process_map()
-		else:
-			file.close()
-			raise Exception("invalid mapping version")
+		if map_version != b"\x32\x31":
+			print(f"Warning: you are using an unknown / unsupported version of the mapping that is no longer supported, please use a newer one or download an older version of this tool.")
+			raise Exception("incompatible mapping")
+
+		self.reader = reader
+		self.process_map()
 
 	def process_map(self):
 		reader = self.reader
@@ -33,15 +30,14 @@ class Mapper:
 		vl2 = lambda data: int.from_bytes(data, "little")
 		raw = lambda length: rw2(reader.ReadBytes(length))
 		rw2 = lambda data: data.rstrip(b"\x00").decode("utf-8")
-		n2p = lambda val: [e[0] for e in enumerate(list(bin(val)[2:][::-1])) if e[1] == "1"]
 
 		# get map meta
 		reader.ReadBytes(2)
 
 		games = {
-			"ys": "Genshin",
-			"sr": "Star Rail",
-			"zzz": "Zenless Zone Zero"
+			"hk4e": "Genshin",
+			"hkrpg": "Star Rail",
+			"nap": "Zenless Zone Zero"
 			# more later
 		}
 
@@ -54,18 +50,46 @@ class Mapper:
 			"sfx"
 		]
 
-		header_size = val(1) # header size
-		block_size = 4
-		header_blocks = [reader.ReadBytes(block_size) for _ in range(header_size // block_size)]
+		# read sectors
+		sectors_signature = reader.ReadBytes(9)
+		if sectors_signature != b"\xFF\x53\x45\x43\x54\x4F\x52\x53\xFF": # ff sectors ff
+			raise Exception("invalid mapping sectors signature")
+
+		n_sectors = val(1)
+		sectors = {}
+
+		for i in range(n_sectors):
+			name_length = val(1)
+			name = raw(name_length)
+			offset = val(4)
+			size = val(4)
+
+			sectors[name] = {
+				"offset": offset,
+				"size": size
+			}
+
+		# read config
+		reader.SetBufferPos(sectors["HEADER"]["offset"])
+
+		header_sig = reader.ReadBytes(8) # hardcoded but lazy, this value is for this sector only
+
+		n_configs = val(1)
+		config = {}
+		for i in range(n_configs):
+			name = raw(4)
+			value = raw(5)
+			config[name] = value
 
 		infos = {
-			"game": games[rw2(header_blocks[0])],
-			"version": list(rw2(header_blocks[1])),
-			"coverage": int(rw2(header_blocks[2])),
-			# more later
+			"game": games[config["game"]],
+			"version": config["verS"],
+			# "coverage": config["covR"],
+			"useBanksSector": config["bnkS"],
+			# "bankSectorCoverage": config["bCov"]
 		}
 
-		print(f"> Loading mapping for {infos['game']} v{infos['version'][0]}.{infos['version'][1]}, this may take a few seconds...")
+		print(f"> Loading mapping for {infos['game']} v{infos['version']}, this may take a few seconds...")
 
 		# read prefixes
 		prefixes = {}
@@ -76,6 +100,11 @@ class Mapper:
 			prefix = raw(l_prefixes)
 			marker = reader.ReadBytes(1)
 			prefixes[marker] = prefix
+
+		# sector jump here
+		reader.SetBufferPos(sectors["ITEMS"]["offset"])
+
+		items_sec_sig = reader.ReadBytes(7) # hardcoded too
 
 		# read languages
 		langs_offsets = {}
@@ -128,42 +157,68 @@ class Mapper:
 		self.files_offsets = files_offsets
 
 		# read keys
-		# GI 3649050
+		# GI 3649050 (outdated value, use items sector size instead)
 		keys_data = {}
 		n_keys = val(3)
 
 		left = reader.GetRemainingLength()
+		if infos["useBanksSector"] == "TRUE":
+			left -= sectors["BANKS"]["size"]
+
 		data = bytearray(reader.ReadBytes(left))
 		keys_data = {rw2(data[i:i+16]): bytes(data[i+16:i+21]) for i in range(0, len(data), 21)}
 
 		self.keys_data = keys_data
 
+		# read banks sector
+		if infos["useBanksSector"] == "TRUE":
+			reader.SetBufferPos(sectors["BANKS"]["offset"])
+
+			banks_sec_sig = reader.ReadBytes(7) # hardcoded
+
+			global_path_size = val(1)
+			global_path = raw(global_path_size)
+
+			n_bank_keys = val(2)
+			bank_keys = {}
+
+			for i in range(n_bank_keys):
+				key_length = val(1)
+				key = raw(key_length)
+				value_length = val(1)
+				value = raw(value_length)
+
+				bank_keys[key] = f"{global_path}\\{value}"
+
+			self.bank_keys = bank_keys
+
 		# done
 		print(f"> Finished loading mapping")
-		print(f": {n_langs} supported languages")
+		print(f"=-=-= Voicelines sector =-=-=")
+		print(f": {n_langs} languages")
 		print(f": {n_files} mapped files")
-		print(f": {n_keys} available keys")
-		print(f"")
-		print(f"> Mapping coverage")
-		coverage = n2p(infos["coverage"])
-		for val in coverage:
-			if val%2 == 0:
-				print(f": partial {coverages[val//2-1]}")
-			else:
-				print(f": {coverages[(val-1)//2]}")
+		print(f": {n_keys} keys")
+		if infos["useBanksSector"] == "TRUE":
+			print(f"=-=-= Music sector =-=-=")
+			print(f": {n_bank_keys} keys")
 
 	def get_key(self, key, lang=False):
 		keys_data = self.keys_data
-		if key not in keys_data.keys():
-			return None
+		banks_data = self.bank_keys
 
-		key_data = keys_data[key]
-		data = [self.files_offsets[int.from_bytes(key_data[2:], "little")]]
+		if key in keys_data.keys():
+			key_data = keys_data[key]
+			data = [self.files_offsets[int.from_bytes(key_data[2:], "little")]]
 
-		if lang:
-			data.append(self.langs_offsets[int.from_bytes(key_data[:1], "little")])
+			if lang:
+				data.append(self.langs_offsets[int.from_bytes(key_data[:1], "little")])
 
-		return data
+			return data
+
+		if key in banks_data.keys():
+			return [banks_data[str(key)], ""]
+
+		return None
 
 	def reset(self):
 		self.reader = None
