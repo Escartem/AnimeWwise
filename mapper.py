@@ -171,6 +171,7 @@ class Mapper:
 		self.keys_data = keys_data
 
 		# read banks sector
+		bank_keys = {}
 		if infos["useBanksSector"] == "TRUE":
 			reader.SetBufferPos(sectors["BANKS"]["offset"])
 
@@ -180,7 +181,6 @@ class Mapper:
 			global_path = raw(global_path_size)
 
 			n_bank_keys = val(2)
-			bank_keys = {}
 
 			for i in range(n_bank_keys):
 				key_length = val(1)
@@ -190,7 +190,7 @@ class Mapper:
 
 				bank_keys[key] = f"{global_path}\\{value}"
 
-			self.bank_keys = bank_keys
+		self.bank_keys = bank_keys
 
 		# done
 		print(f"> Finished loading mapping")
