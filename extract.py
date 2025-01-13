@@ -1,5 +1,6 @@
 import os
 import io
+import json
 import wwise
 import tempfile
 import wavescan
@@ -159,9 +160,22 @@ class WwiseExtract:
 			filename = f"{filename} (hdiff)"
 			files = [*files[0], *files[1]]
 
+		# in case of manual use of mapping, use this
+		# load json here
+
+		# handle = open("banks.json", "r")
+		# banks = json.loads(handle.read())
+		# handle.close()
+
 		for file in files:
 			if mapper is not None:
 				key = mapper.get_key(file[0].split(".")[0])
+
+				# and override the method with a manual dict lookup
+				
+				# _id = file[0].split(".")[0]
+				# if _id in list(banks["banks"].keys()):
+				# 	key = [banks["banks"][_id], ""]
 			else:
 				key = None
 

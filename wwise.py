@@ -170,6 +170,8 @@ def parse_wwise(reader):
 		blocks_offset = 0x28
 		# define header to type 2, packet to modified and codebook to aoTuV603, required ?
 
+		# this somehow breaks and don't read correctly, why :c
+		# stream_size * 8 * sample_rate / num_samples = bitrate * 1000
 		metadata["numSamples"] = reader.ReadInt32(extra_offset)
 		setup_offset = reader.ReadUInt32(extra_offset + data_offset)
 		audio_offset = reader.ReadUInt32(extra_offset + data_offset + 0x04)
