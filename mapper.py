@@ -119,7 +119,7 @@ class Mapper:
 
 		# read folders
 		folder_offsets = {}
-		n_folders = reader.ReadUInt8()
+		n_folders = reader.ReadUInt16()
 
 		for i in range(n_folders):
 			offset = reader.GetBufferPos()
