@@ -1,5 +1,6 @@
 import os
 import io
+import json
 import wwise
 import tempfile
 import wavescan
@@ -11,7 +12,12 @@ from filereader import FileReader
 
 cwd = os.getcwd()
 path = lambda *args: os.path.join(*args)
-call = lambda args: subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+def call(args):
+	try:
+		subprocess.call(args, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+	except Exception as e:
+		print(f"[WARNING] failed to extract, {e}")
 
 class WwiseExtract:
 	def __init__(self):
@@ -154,9 +160,22 @@ class WwiseExtract:
 			filename = f"{filename} (hdiff)"
 			files = [*files[0], *files[1]]
 
+		# in case of manual use of mapping, use this
+		# load json here
+
+		# handle = open("banks.json", "r")
+		# banks = json.loads(handle.read())
+		# handle.close()
+
 		for file in files:
 			if mapper is not None:
 				key = mapper.get_key(file[0].split(".")[0])
+
+				# and override the method with a manual dict lookup
+				
+				# _id = file[0].split(".")[0]
+				# if _id in list(banks["banks"].keys()):
+				# 	key = [banks["banks"][_id], ""]
 			else:
 				key = None
 
@@ -169,6 +188,9 @@ class WwiseExtract:
 
 			wem_data = data[file_data["offset"]:file_data["offset"]+file_data["size"]]
 			parsed_wem = wwise.parse_wwise(FileReader(io.BytesIO(wem_data), "little", name=f"{file[3]}:{file[0]}:{file[1]}"))
+
+			if not parsed_wem:
+				continue
 
 			file_data["metadata"] = parsed_wem
 
@@ -285,7 +307,7 @@ class WwiseExtract:
 				if os.path.isfile(hdiff_path):
 					load_path = hdiff_path
 			
-			self.allocator.load_file(load_path)
+			self.allocator.load_file(load_path, source)
 
 			# extract every file from this one
 			for file in [file for file in files if file["source"] == source]:
@@ -371,8 +393,8 @@ class WwiseExtract:
 
 	def update_progress(self, current, total, step):
 		base = 100 / self.steps
-		self.progress(["total", current * base // total + base * (step - 1)])
-		self.progress(["file", current * 100 // total])
+		self.progress(["total", current * base / total + base * (step - 1)])
+		self.progress(["file", current * 100 / total])
 
 	def reset(self):
 		self.mapper = None

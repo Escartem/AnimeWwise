@@ -2,24 +2,27 @@
 import io
 from filereader import FileReader
 
-def bnk2wem(data):
+def bnk2wem(data, name):
 	# gets raw data from object
-	reader = FileReader(io.BytesIO(data), "little")
+	reader = FileReader(io.BytesIO(data), "little", name=name)
 
 	bkhd_signature = reader.ReadBytes(4)
 
 	if bkhd_signature != b"\x42\x4B\x48\x44":
-		raise Exception("not a valid bnk")
+		print(f"[WARNING] invalid bkhd signature at {reader.GetName()}")
+		return []
 
 	bkhd_size = reader.ReadUInt32()
 	reader.ReadBytes(bkhd_size)
 
 	if reader.GetBufferPos() == reader.GetStreamLength():
+		print(f"[WARNING] empty bnk file at {reader.GetName()}")
 		return [] # empty bnk
 
 	didx_signature = reader.ReadBytes(4)
 
 	if didx_signature != b"\x44\x49\x44\x58":
+		print(f"[WARNING] invalid didx signature at {reader.GetName()}")
 		return [] # invalid index signature (hirc block instead ?)
 
 	didx_size = reader.ReadUInt32()
@@ -35,6 +38,7 @@ def bnk2wem(data):
 	data_signature = reader.ReadBytes(4)
 
 	if data_signature != b"\x44\x41\x54\x41":
+		print(f"[WARNING] invalid data signature at {reader.GetName()}")
 		return [] # invalid data signature (missing sector ?)
 
 	data_size = reader.ReadUInt32()

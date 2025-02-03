@@ -220,7 +220,7 @@ def extract_sector(section_size, is_sounds, is_externals, ext, endianness, lang_
 			bnk_data = reader.ReadBytes(size)
 			reader.SetBufferPos(pos)
 
-			wems = bnk2wem(bnk_data)
+			wems = bnk2wem(bnk_data, f"{filename}@{pos}.{size}")
 
 			for wem in wems:
 				wwise_data.append([f"{os.path.basename(name).split('.')[0]}_{wem[0]}.wem", offset+wem[1], wem[2], filename])

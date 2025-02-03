@@ -23,7 +23,7 @@ def parse_wwise(reader):
 
 	if reader.GetStreamLength() == 0:
 		print(f"[WARNING] null stream size at {reader.GetName()}, unreadable block")
-		return metadata
+		return None
 
 	header = reader.ReadBytes(4)
 
@@ -34,7 +34,7 @@ def parse_wwise(reader):
 		reader.endianness = "little"
 	else:
 		print(f"[WARNING] invalid header {header} at {reader.GetName()}, assuming unreadable")
-		return metadata
+		return None
 
 	# additional check
 	reader.SetBufferPos(0x08)
@@ -42,7 +42,7 @@ def parse_wwise(reader):
 
 	if check != b"WAVE" and check != "XWMA":
 		print(f"[WARNING] invalid check mark {check}, assuming unreadable")
-		return metadata
+		return None
 
 	# read chunks
 	reader.SetBufferPos(0x0C)
@@ -71,7 +71,7 @@ def parse_wwise(reader):
 	fmt_length = chunks["fmt"]["length"]
 	if fmt_length < 0x10:
 		print(f"[WARNING] invalid fmt chunk length {fmt_length} at {reader.GetName()}, skipping")
-		return metadata
+		return None
 
 	reader.SetBufferPos(chunks["fmt"]["offset"])
 
@@ -94,7 +94,7 @@ def parse_wwise(reader):
 
 	if metadata["format"] == 0x0166:
 		print(f"[WARNING] XMA2WAVEFORMATEX in fmt at {reader.GetName()}")
-		return metadata
+		return None
 
 	# parse codec
 	codecs = {
@@ -122,7 +122,7 @@ def parse_wwise(reader):
 
 	if metadata["format"] not in codecs:
 		print(f'[WARNING] unknown codec {metadata["format"]} at {reader.GetName()}')
-		return metadata
+		return None
 
 	codec = codecs[metadata["format"]]
 
@@ -153,23 +153,25 @@ def parse_wwise(reader):
 	elif metadata["codec"] == "VORBIS":
 		if (metadata["blockSize"] != 0 or metadata["bitsPerSample"] != 0):
 			print(f"[WARNING] worbis type at {reader.GetName()}, skipping")
-			return metadata
+			return None
 
 		if "vorb" in chunks:
 			# vorb chunk only in wwise earlier to 2012, therefore impossible for mihoyo games
 			print(f"[WARNING] found vorb chunk at {reader.GetName()}, is this the correct game ?")
-			return metadata
+			return None
 
 		extra_offset = chunks["fmt"]["offset"] + 0x18
 
 		if metadata["extraSize"] != 0x30:
 			print(f"[WARNING] unknown extra wwise size at {reader.GetName()}, skipping")
-			return metadata
+			return None
 
 		data_offset = 0x10
 		blocks_offset = 0x28
 		# define header to type 2, packet to modified and codebook to aoTuV603, required ?
 
+		# this somehow breaks and don't read correctly, why :c
+		# stream_size * 8 * sample_rate / num_samples = bitrate * 1000
 		metadata["numSamples"] = reader.ReadInt32(extra_offset)
 		setup_offset = reader.ReadUInt32(extra_offset + data_offset)
 		audio_offset = reader.ReadUInt32(extra_offset + data_offset + 0x04)

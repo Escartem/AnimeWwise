@@ -11,8 +11,7 @@ class FileReader:
 	def __init__(self, file, endianness:str, name:str=None):
 		self.stream = file
 		self.endianness = endianness
-		if name:
-			self.name = name
+		self.name = name
 
 	def _read(self, mode:str, bufferLength:int, endianness:str=None, pos:int=None) -> bytes:
 		# endianness override
