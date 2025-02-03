@@ -100,11 +100,10 @@ class UpdaterWorker(QObject):
 			for i in range(n_games):
 				current = currentMaps["maps"][i]
 				latest = latestMaps["maps"][i]
+				name = f"maps/{latest['name']}"
 
-				if ver(current["version"]) < ver(latest["version"]):
+				if (ver(current["version"]) < ver(latest["version"])) or not os.path.isfile(name):
 					self.progress.emit([5 + game_size * i, f'Updating {latest["game"]} to {latest["version"]}'])
-
-					name = f"maps/{latest['name']}"
 
 					url = f"https://raw.githubusercontent.com/Escartem/AnimeWwise/master/{name}"
 					urllib.request.urlretrieve(url, "maps/temp.map")
