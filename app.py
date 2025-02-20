@@ -180,7 +180,7 @@ class AnimeWwise(QMainWindow):
 		uic.loadUi("gui.ui", self)
 		self.versions = self.getJson("version")
 		self.version = self.versions["version"]
-		self.maps = self.version["maps"]
+		self.maps = self.versions["maps"]
 		self.setWindowTitle(f'AnimeWwise | v{".".join(list(str(self.version)))}')
 		self.folders = {
 			"input": "",
@@ -242,7 +242,7 @@ class AnimeWwise(QMainWindow):
 		self.pckLoadTypeCombo.currentIndexChanged.connect(self.loadTypeChange)
 		self.loadType = "folder"
 
-		self.assetMap.addItems(["No map", *[f'{e["game"]} - v{e["version"]}' for e in self.maps["maps"]]])
+		self.assetMap.addItems(["No map", *[f'{e["game"]} - v{e["version"]}' for e in self.maps]])
 
 		self.setExtractionState(False)
 
