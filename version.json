@@ -1,4 +1,21 @@
 {
     "version": 220,
-    "mapsVersion": 97
+    "mapsVersion": 97,
+    "maps": [
+        {
+            "name": "hk4e.map",
+            "game": "Genshin Impact",
+            "version": "5.3"
+        },
+        {
+            "name": "hkrpg.map",
+            "game": "Honkai: Star Rail",
+            "version": "3.0"
+        },
+        {
+            "name": "nap.map",
+            "game": "Zenless Zone Zero",
+            "version": "1.4"
+        }
+    ]
 }

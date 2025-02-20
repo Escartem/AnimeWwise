@@ -85,8 +85,8 @@ class UpdaterWorker(QObject):
 			self.progress.emit([0, "Fetching index..."])
 			ver = lambda s: int(s.replace(".", ""))
 
-			index = open("maps/index.json", "r")
-			currentMaps = json.loads(index.read())
+			index = open("version.json", "r")
+			currentMaps = json.loads(index.read())["maps"]
 			index.close()
 
 			latestMaps = get("https://raw.githubusercontent.com/Escartem/AnimeWwise/master/maps/index.json")
@@ -116,15 +116,12 @@ class UpdaterWorker(QObject):
 					currentMaps["maps"][i]["version"] = latest["version"]
 
 			# save new index
-			index = open("maps/index.json", "w+")
-			index.write(json.dumps(currentMaps, indent=4))
-			index.close()
-
 			index_sum = sum([ver(e["version"]) for e in currentMaps["maps"]])
 
 			with open("version.json", "r+") as f:
 				data = json.loads(f.read())
 				data["mapsVersion"] = index_sum
+				data["maps"] = currentMaps
 				f.seek(0)
 				f.write(json.dumps(data, indent=4))
 				f.truncate()
@@ -181,8 +178,10 @@ class AnimeWwise(QMainWindow):
 	def __init__(self):
 		super(AnimeWwise, self).__init__()
 		uic.loadUi("gui.ui", self)
-		self.maps = self.getJson("maps/index")
-		self.setWindowTitle(f'AnimeWwise | v{".".join(list(str(self.getJson("version")["version"])))}')
+		self.versions = self.getJson("version")
+		self.version = self.versions["version"]
+		self.maps = self.version["maps"]
+		self.setWindowTitle(f'AnimeWwise | v{".".join(list(str(self.version)))}')
 		self.folders = {
 			"input": "",
 			"output": "",
@@ -203,7 +202,7 @@ class AnimeWwise(QMainWindow):
 	def checkUpdates(self):
 		print("Checking for updates...")
 		try:
-			currentVersion = self.getJson("version")
+			currentVersion = self.versions
 			latestVersionReq = get("https://raw.githubusercontent.com/Escartem/AnimeWwise/master/version.json")
 			
 			if latestVersionReq.status_code == 200:
@@ -217,6 +216,7 @@ class AnimeWwise(QMainWindow):
 				QMessageBox.information(None, "Info", "Newer version of the mappings are availble, the program will update them now.", QMessageBox.Ok)
 				self.updaterWindow = Updater()
 				self.updaterWindow.exec_()
+				self.maps = latestVersion["maps"]
 			else:
 				print("No updates")
 		except:
