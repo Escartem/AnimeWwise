@@ -3,17 +3,17 @@
         {
             "name": "hk4e.map",
             "game": "Genshin Impact",
-            "version": "5.2"
+            "version": "5.3"
         },
         {
             "name": "hkrpg.map",
             "game": "Honkai: Star Rail",
-            "version": "2.6"
+            "version": "3.0"
         },
         {
             "name": "nap.map",
             "game": "Zenless Zone Zero",
-            "version": "1.2"
+            "version": "1.4"
         }
     ]
 }
