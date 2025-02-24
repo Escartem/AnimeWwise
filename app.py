@@ -377,7 +377,7 @@ class AnimeWwise(QMainWindow):
 
 		_map = self.assetMap.currentIndex()
 		if _map != 0:
-			_map = self.maps["maps"][_map-1]["name"]
+			_map = self.maps[_map-1]["name"]
 		else:
 			_map = None
 
