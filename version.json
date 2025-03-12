@@ -1,6 +1,6 @@
 {
     "version": 221,
-    "mapsVersion": 99,
+    "mapsVersion": 100,
     "maps": [
         {
             "name": "hk4e.map",
@@ -15,7 +15,7 @@
         {
             "name": "nap.map",
             "game": "Zenless Zone Zero",
-            "version": "1.5"
+            "version": "1.6"
         }
     ]
 }
