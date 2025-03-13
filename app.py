@@ -86,10 +86,10 @@ class UpdaterWorker(QObject):
 			ver = lambda s: int(s.replace(".", ""))
 
 			index = open("version.json", "r")
-			currentMaps = json.loads(index.read())["maps"]
+			currentMaps = json.loads(index.read())
 			index.close()
 
-			latestMaps = get("https://raw.githubusercontent.com/Escartem/AnimeWwise/master/maps/index.json")
+			latestMaps = get("https://raw.githubusercontent.com/Escartem/AnimeWwise/master/version.json")
 
 			if latestMaps.status_code == 200:
 				latestMaps = json.loads(latestMaps.text)
@@ -121,7 +121,7 @@ class UpdaterWorker(QObject):
 			with open("version.json", "r+") as f:
 				data = json.loads(f.read())
 				data["mapsVersion"] = index_sum
-				data["maps"] = currentMaps
+				data["maps"] = currentMaps["maps"]
 				f.seek(0)
 				f.write(json.dumps(data, indent=4))
 				f.truncate()
