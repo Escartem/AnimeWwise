@@ -4,6 +4,8 @@ An easy to use tool to extract audio from some anime games, with the original fi
 
 ![image](https://github.com/user-attachments/assets/ce2c8b19-82a2-42fc-a149-ed9ffbb7c54b)
 
+### ⚠️ Only Genshin, Star Rail and Zenless supported !
+
 # Usage
 
 1. Get the repo by [downloading it](https://github.com/Escartem/WwiseExtract/archive/refs/heads/master.zip) or cloning it (`git clone https://github.com/Escartem/AnimeWwise`)
@@ -23,9 +25,12 @@ An easy to use tool to extract audio from some anime games, with the original fi
 > Diff files are `.hdiff` present in the update patches of the games. If you want to extract an hdiff content, you must have the pck file with the *same name before patch* in the input folder, pck's that do not have a corresponding hdiff file will be extracted normally, when they do have a corresponding hdiff file, *only the hdiff file content is extracted* and not the full pck
 6. Select a mapping
 > [!WARNING]
-> By default, the files extracted from the game don't have names, the mappings are here to help restore the original filenames and paths so it's easier to search, there are only mappings for hoyo games and their coverage varies
+> By default, the files extracted from the game don't have names, the mappings are here to help restore the original filenames and paths so it's easier to search, there are only mappings for hoyo games and their coverage varies.
+> The mapping does NOT guarantee to recover all the names !
 7. After that, you can browse the files you loaded, if you messed up and wanna go back, you can select File > Reset to unload everything and go back to the starting screen.
 ![image](https://github.com/user-attachments/assets/73e2ece9-9fa7-4149-8674-762adb1ef50c)
+> [!WARNING]
+> The duration indicator is known to produce wrong results on music files or sfx, please take note when using it
 8. In the `Extract` menu, you will be able to select what audio you want, choosing the output folder and audio format. You can extract everything or extract the files you selected
 > [!NOTE]
 > The program does not check for existing files in the output folder, it will overwrite them, make sure to check your folder before starting the extraction 
