@@ -7,7 +7,7 @@ class Allocator:
 		self.files = {}
 
 	def load_file(self, path, name):
-		with open(path, "r+b") as f:
+		with open(path, "rb") as f:
 			mmap_object = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
 
 		self.files[name] = mmap_object
