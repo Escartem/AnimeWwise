@@ -1,6 +1,6 @@
 {
     "version": 221,
-    "mapsVersion": 107,
+    "mapsVersion": 108,
     "maps": [
         {
             "name": "hk4e.map",
@@ -10,7 +10,7 @@
         {
             "name": "hkrpg.map",
             "game": "Honkai: Star Rail",
-            "version": "3.3"
+            "version": "3.4"
         },
         {
             "name": "nap.map",
