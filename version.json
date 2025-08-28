@@ -1,6 +1,6 @@
 {
     "version": 221,
-    "mapsVersion": 108,
+    "mapsVersion": 110,
     "maps": [
         {
             "name": "hk4e.map",
@@ -10,12 +10,12 @@
         {
             "name": "hkrpg.map",
             "game": "Honkai: Star Rail",
-            "version": "3.4"
+            "version": "3.5"
         },
         {
             "name": "nap.map",
             "game": "Zenless Zone Zero",
-            "version": "2.0"
+            "version": "2.1"
         }
     ]
 }
