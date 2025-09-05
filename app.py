@@ -501,6 +501,17 @@ class AnimeWwise(QMainWindow):
 	def extractItems(self, _all):
 		self.setFolder(folder="output")
 
+		# meta
+		self.meta_index = {}
+		stack = [self.fileStructure]
+
+		while stack:
+			node = stack.pop()
+			for f in node["files"]:
+				self.meta_index[f[0]] = f[1]
+			stack.extend(node["folders"].values())
+		###
+
 		checked_items = []
 	
 		def check_items(item, _all):
@@ -536,9 +547,7 @@ class AnimeWwise(QMainWindow):
 			path.insert(0, current_item.text(0))
 			current_item = current_item.parent()
 
-		meta = self.searchFiles(self.fileStructure, item.text(0), flatten=True)["files"][0]
-		name = meta[0]
-		meta = meta[1] # move inside
+		meta = self.meta_index.get(item.text(0))
 
 		return {
 			"name": item.text(0),
