@@ -6,9 +6,7 @@ An easy to use tool to extract audio from some anime games, with the original fi
 
 ### ⚠️ Only Genshin, Star Rail and Zenless supported !
 
-### :x: As of Genshin 5.5+, the audio data is no longer recoverable until a new workaround is found. The latest map have audio for 5.4 and music names for 5.3. Statement by Dimbreath regarding the situation :
-
-`As of 5.5.0 they implemented a new encryption and shuffle of field order of which the former is incredibly hard to dump so BinOutput will be currently unavailable [...] the field order shuffle has completely harmed deobfuscation so for the time being fields will stay obfuscated`
+### ⚠️ Genshin will not be updated at every version, and current version of music names is 5.3 for now
 
 
 # Usage
