@@ -8,6 +8,8 @@ An easy to use tool to extract audio from some anime games, with the original fi
 
 ### ⚠️ Genshin will not be updated at every version, and current version of music names is 5.3 for now
 
+### ⚠️ ZZZ changed how audio is stored, no updates beyond 2.2 planned for now
+
 
 # Usage
 
