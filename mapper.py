@@ -47,7 +47,7 @@ class Mapper:
 		print(f"> Loading mapping for {infos['game']} v{infos['version']}, this may take a few seconds...")
 
 		# sectors
-		int24 = lambda: int.from_bytes(reader.ReadBytes(3))
+		int24 = lambda: int.from_bytes(reader.ReadBytes(3), "big")
 
 		sectors = {
 			# offset | size
