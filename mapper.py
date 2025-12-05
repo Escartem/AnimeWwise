@@ -84,7 +84,7 @@ class Mapper:
 		n_files = n_keys // n_langs
 
 		keys_data = bytearray(reader.ReadBytes(sectors["keys"][1]-1))
-		self.keys = {keys_data[i+3:i+key_size].hex(): int.from_bytes(keys_data[i:i+3]) for i in range(0, len(keys_data), key_size)}
+		self.keys = {keys_data[i+3:i+key_size].hex(): int.from_bytes(keys_data[i:i+3], "big") for i in range(0, len(keys_data), key_size)}
 
 		# music
 		self.music_keys = {}
@@ -94,10 +94,10 @@ class Mapper:
 			reader.SetBufferPos(sectors["music"][0])
 			root_size = reader.ReadInt8()
 			root = reader.ReadBytes(root_size).decode("utf-8")
-			n_music = int.from_bytes(reader.ReadBytes(2))
+			n_music = int.from_bytes(reader.ReadBytes(2), "big")
 
 			for i in range(n_music):
-				key = int.from_bytes(reader.ReadBytes(4))
+				key = int.from_bytes(reader.ReadBytes(4), "big")
 				name_size = reader.ReadInt8()
 				name = reader.ReadBytes(name_size).decode("utf-8")
 				self.music_keys[str(key)] = f"{root}\\{name}"
@@ -120,19 +120,19 @@ class Mapper:
 
 		lang, offset = (self.keys[key] >> 22) & 0x03, self.keys[key] & 0x3FFFFF
 
-		parts = int.from_bytes(self.files[offset:offset+1])
+		parts = int.from_bytes(self.files[offset:offset+1], "big")
 		name = []
 
 		for i in range(parts):
-			word_offset = int.from_bytes(self.files[offset+1+(3*i):offset+4+(3*i)])
-			word_parts = int.from_bytes(self.words[word_offset:word_offset+1])
+			word_offset = int.from_bytes(self.files[offset+1+(3*i):offset+4+(3*i)], "big")
+			word_parts = int.from_bytes(self.words[word_offset:word_offset+1], "big")
 			word = []
 
 			for j in range(word_parts):
-				string_offset = int.from_bytes(self.words[word_offset+1+(2*j):word_offset+3+(2*j)])
-				string_size = int.from_bytes(self.strings[string_offset:string_offset+1])
+				string_offset = int.from_bytes(self.words[word_offset+1+(2*j):word_offset+3+(2*j)], "big")
+				string_size = int.from_bytes(self.strings[string_offset:string_offset+1], "big")
 				if string_size > 128:
-					string = str(int.from_bytes(self.strings[string_offset+1:string_offset+1+(string_size-128)]))
+					string = str(int.from_bytes(self.strings[string_offset+1:string_offset+1+(string_size-128)], "big"))
 				else:
 					string = self.strings[string_offset+1:string_offset+1+string_size].decode("utf-8")
 				word.append(string)
