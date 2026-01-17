@@ -6,9 +6,11 @@ import tempfile
 import wavescan
 import platform
 import subprocess
+import multiprocessing
 from mapper import Mapper
 from allocator import Allocator
 from filereader import FileReader
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 cwd = os.getcwd()
 path = lambda *args: os.path.join(*args)
@@ -332,27 +334,59 @@ class WwiseExtract:
 		self.allocator.free_mem()
 
 	def extract_wav(self, _input, files, output):
-		print(": Converting audio to wav")
-		pos = 0
-		for file in files:
-			pos += 1
-			self.update_progress(pos, len(files), 2)
+		print(": Converting audio to wav (MAY TAKE A MINUTE FOR PROGRESS BAR TO UPDATE)")
 
-			filename = f'{os.path.basename(file).split(".")[0]}.wav'
-			filepath = path(output, os.path.dirname(file), filename)
-			os.makedirs(os.path.dirname(filepath), exist_ok=True)
+		max_workers = min(8, multiprocessing.cpu_count())
+		
+		with ThreadPoolExecutor(max_workers=max_workers) as executor:
+			futures = []
 
-			args = [
-				path(cwd, "tools/vgmstream/vgmstream-cli.exe"),
-				"-o",
-				filepath,
-				path(_input, file)
-			]
+			for pos, file in enumerate(files, 1):
+				filename = f'{os.path.basename(file).split(".")[0]}.wav'
+				filepath = path(output, os.path.dirname(file), filename)
+				os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-			if platform.system() != "Windows":
-				args.insert(0, "wine")
+				args = [
+					path(cwd, "tools/vgmstream/vgmstream-cli.exe"),
+					"-o",
+					filepath,
+					path(_input, file)
+				]
 
-			call(args)
+				if platform.system() != "Windows":
+					args.insert(0, "wine")
+
+				futures.append(executor.submit(call, args))
+				# self.update_progress(pos, len(files), 2)
+
+			done = 0
+			total = len(futures)
+
+			for _ in as_completed(futures):
+				# f.result()
+				done += 1
+				self.update_progress(done, total, 2)
+
+		# pos = 0
+		# for file in files:
+		# 	pos += 1
+		# 	self.update_progress(pos, len(files), 2)
+
+		# 	filename = f'{os.path.basename(file).split(".")[0]}.wav'
+		# 	filepath = path(output, os.path.dirname(file), filename)
+		# 	os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+		# 	args = [
+		# 		path(cwd, "tools/vgmstream/vgmstream-cli.exe"),
+		# 		"-o",
+		# 		filepath,
+		# 		path(_input, file)
+		# 	]
+
+		# 	if platform.system() != "Windows":
+		# 		args.insert(0, "wine")
+
+		# 	call(args)
 
 	def extract_ffmpeg(self, _input, files, output, _format):
 		print(f": Converting audio to {_format}")
