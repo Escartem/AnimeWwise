@@ -4,6 +4,8 @@ An easy to use tool to extract audio from some anime games, with the original fi
 
 ![image](https://github.com/user-attachments/assets/ce2c8b19-82a2-42fc-a149-ed9ffbb7c54b)
 
+### Important ! A map is only here to recover names, not make extraction possible, you can use old maps or no map at all and still get all the audio from the game. Maps being outdated only mean you will not have the latest names automatically found, you can still load and extract audio !
+
 ### ⚠️ Only Genshin, Star Rail and Zenless supported !
 
 ### ⚠️ Genshin will not be updated at every version, and current version of music names is 5.3 for now
