@@ -1,5 +1,11 @@
 # wwise riff header parser
 # thanks to hcs and bnnm work
+import io
+from vfs import decrypt
+from filereader import FileReader
+
+def parse_wwise(data, name, fid):
+	reader = FileReader(io.BytesIO(data), "little", name=name)
 
 def parse_wwise(reader):
 	# default meta config
@@ -27,6 +33,28 @@ def parse_wwise(reader):
 
 	header = reader.ReadBytes(4)
 
+	if header not in ["RIFF", "RIFX"]:
+		# file may be vfs encrypted, however this is painfully slow so by default it will skip this and return no metadata
+
+		if False: # set to true to parse metadata
+			data = bytearray(data)
+			wem_id = 0
+			try:
+				wem_id = int(fid[:-4])
+			except ValueError:
+				try:
+					wem_id = int(fid[:-4], 16)
+				except ValueError:
+					return None
+			decrypt(data, 0, len(data), wem_id, 0)
+			if data[0:4] not in [b"RIFF", b"RIFX"]:
+				print(f"[WARNING] invalid header {header} at {reader.GetName()}, assuming unreadable")
+				return None
+			reader = FileReader(io.BytesIO(data), "little", name=name) # reset reader
+			header = reader.ReadBytes(4)
+		else:
+			return metadata
+
 	# endian check header
 	if header == b"RIFX":
 		reader.endianness = "big"
@@ -52,7 +80,7 @@ def parse_wwise(reader):
 	while reader.GetBufferPos() < reader.GetStreamLength():
 		chunk_type = reader.ReadBytes(4)
 
-		if chunk_type not in [b"fmt ", b"JUNK", b"data", b"akd ", b"cue ", b"LIST", b"smpl"]:
+		if chunk_type not in [b"fmt ", b"JUNK", b"data", b"akd ", b"cue ", b"LIST", b"smpl", b"hash", b"seek"]:
 			print(f"[WARNING] unexpected chunk {chunk_type} at {reader.GetName()}")
 
 		formatted_chunk_type = chunk_type.decode("utf-8").replace(" ", "")

@@ -359,11 +359,11 @@ class AnimeWwise(QMainWindow):
 			files = []
 			if self.folders["input"]:
 				if self.pckSubFold.isChecked():
-					files = [os.path.join(root, f) for root, dirs, files_in_dir in os.walk(self.folders["input"]) for f in files_in_dir if f.endswith(".pck")]
+					files = [os.path.join(root, f) for root, dirs, files_in_dir in os.walk(self.folders["input"]) for f in files_in_dir if f.endswith(".pck") or f.endswith(".chk")]
 				else:
-					files = [os.path.join(self.folders["input"], f) for f in os.listdir(self.folders["input"]) if f.endswith(".pck")]
+					files = [os.path.join(self.folders["input"], f) for f in os.listdir(self.folders["input"]) if f.endswith(".pck") or f.endswith(".chk")]
 		elif self.loadType == "file":
-			path = QFileDialog.getOpenFileName(self, "Select .pck File", "", "PCK Files (*.pck)", options=QFileDialog.Options())
+			path = QFileDialog.getOpenFileName(self, "Select audio file", "", "PCK Files (*.pck);; CHK Files (*.chk)", options=QFileDialog.Options())
 			self.folders["input"] = os.path.dirname(path[0])
 			files = [path[0]]
 
@@ -554,7 +554,8 @@ class AnimeWwise(QMainWindow):
 			"path": path[:-1],
 			"source": meta["source"],
 			"offset": meta["offset"],
-			"size": meta["size"]
+			"size": meta["size"],
+			"original_name": meta["original_name"]
 		}
 
 	# misc

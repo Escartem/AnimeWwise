@@ -1,6 +1,6 @@
 {
     "version": 222,
-    "mapsVersion": 122,
+    "mapsVersion": 123,
     "maps": [
         {
             "name": "hk4e.map",
@@ -16,6 +16,11 @@
             "name": "nap.map",
             "game": "Zenless Zone Zero",
             "version": "2.2"
+        },
+        {
+            "name": "beyond.map",
+            "game": "Arknights Endfield",
+            "version": "1.0"
         }
     ]
 }

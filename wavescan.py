@@ -1,7 +1,10 @@
 # Custom rewrite of the Wwise AKPK packages extractor, original by Nicknine and bnnm
 import os
+import io
 import traceback
 from bnk import bnk2wem
+from vfs import decrypt
+from filereader import FileReader
 
 
 reader = None
@@ -10,7 +13,7 @@ wwise_data = []
 filename = ""
 
 
-def get_data(_reader, _filename):
+def get_data(data, _filename):
 	global wwise_data
 	global bank_version
 	global reader
@@ -18,10 +21,32 @@ def get_data(_reader, _filename):
 
 	filename = _filename
 	wwise_data = []
-	reader = _reader
+	reader = FileReader(io.BytesIO(data), "little")
+	vfs = False
 
 	# check file
-	if reader.ReadBytes(4) != b"AKPK":
+	magic = reader.ReadBytes(4)
+	if magic == b":)xD":
+		# file is endfield VFS
+		print("file is VFS !!")
+		vfs = True
+		reader.SetBufferPos(4)
+		header_size = reader.ReadUInt32()
+		print(header_size)
+		reader.SetBufferPos(0)
+		header = bytearray(reader.ReadBytes(header_size+8))
+		decrypt(header, 12, header_size - 4, header_size, 0)
+		# recreate file
+		dec_data = bytearray()
+		dec_data += header
+		dec_data += data[header_size+8:]
+		dec_data[0:4] = b"AKPK"
+		dec_data[8:12] = (1).to_bytes(4, "little")
+		data = dec_data
+		reader = FileReader(io.BytesIO(data), "little") # reset reader
+		magic = reader.ReadBytes(4)
+
+	if magic != b"AKPK":
 		# file.close()
 		raise Exception("not a valid audio file")
 

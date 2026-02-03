@@ -31,7 +31,8 @@ class Mapper:
 		games = {
 			"hk4e": "Genshin",
 			"hkrpg": "Star Rail",
-			"nap": "Zenless Zone Zero"
+			"nap": "Zenless Zone Zero",
+			"beyond": "Arknights Endfield"
 			# more later
 		}
 

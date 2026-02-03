@@ -6,6 +6,7 @@ import tempfile
 import wavescan
 import platform
 import subprocess
+from vfs import decrypt
 from mapper import Mapper
 from allocator import Allocator
 from filereader import FileReader
@@ -85,8 +86,7 @@ class WwiseExtract:
 		self.get_wems(data, os.path.basename(_input), hdiff, os.path.relpath(_input, start=base_path))
 
 	def get_wems(self, data, filename, hdiff, relpath):
-		reader = FileReader(io.BytesIO(data), "little")
-		files = wavescan.get_data(reader, filename)
+		files = wavescan.get_data(data, filename)
 		
 		if hdiff is not None:
 			with open(hdiff, "rb") as f:
@@ -143,8 +143,7 @@ class WwiseExtract:
 			f.write(data)
 			f.close()
 
-		reader = FileReader(io.BytesIO(data), "little")
-		files = wavescan.get_data(reader, source_name)
+		files = wavescan.get_data(data, source_name)
 
 		working_dir.cleanup()
 
@@ -167,7 +166,7 @@ class WwiseExtract:
 		# banks = json.loads(handle.read())
 		# handle.close()
 
-		for file in files:
+		def process_file(file):
 			if mapper is not None:
 				key = mapper.get_key(file[0].split(".")[0])
 
@@ -183,14 +182,15 @@ class WwiseExtract:
 				"source": relpath,
 				"size": file[2],
 				"offset": file[1],
+				"original_name": file[0],
 				"metadata": {}
 			}
 
 			wem_data = data[file_data["offset"]:file_data["offset"]+file_data["size"]]
-			parsed_wem = wwise.parse_wwise(FileReader(io.BytesIO(wem_data), "little", name=f"{file[3]}:{file[0]}:{file[1]}"))
+			parsed_wem = wwise.parse_wwise(wem_data, f"{file[3]}:{file[0]}:{file[1]}", file[0])
 
 			if not parsed_wem:
-				continue
+				return
 
 			file_data["metadata"] = parsed_wem
 
@@ -228,6 +228,12 @@ class WwiseExtract:
 				if "unmapped" not in temp:
 					temp["unmapped"] = {"folders": {}, "files": []}
 				temp["unmapped"]["files"].append([file[0], file_data])
+		
+		pos = 0
+		for file in files:
+			process_file(file)
+			pos += 1
+			self.update_progress(pos, len(files), 1)
 
 		self.file_structure = base
 
@@ -316,7 +322,22 @@ class WwiseExtract:
 
 				file["source"] = file["source"].split(" (hdiff)")[0]
 				data = self.allocator.read_at(file["source"], file["offset"], file["size"])
-				
+
+				if data[0:4] not in [b"RIFF", b"RIFX"]:
+					# file may be vfs encrypted
+					data = bytearray(data)
+					wem_id = 0
+					try:
+						wem_id = int(file["original_name"][:-4])
+					except ValueError:
+						try:
+							wem_id = int(file["original_name"][:-4], 16)
+						except ValueError:
+							continue
+					decrypt(data, 0, len(data), wem_id, 0)
+					if data[0:4] not in [b"RIFF", b"RIFX"]:
+						continue
+							
 				filepath = path("/".join(file["path"]), file["name"])
 				fullpath = path(output, filepath)
 				os.makedirs(os.path.dirname(fullpath), exist_ok=True)
