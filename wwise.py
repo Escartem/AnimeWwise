@@ -7,7 +7,6 @@ from filereader import FileReader
 def parse_wwise(data, name, fid):
 	reader = FileReader(io.BytesIO(data), "little", name=name)
 
-def parse_wwise(reader):
 	# default meta config
 	metadata = {
 		"format": 0,
