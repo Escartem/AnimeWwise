@@ -27,17 +27,22 @@ An easy to use tool to extract audio from some anime games, with the original fi
 > - `GenshinImpact_Data\StreamingAssets\AudioAsset\...`
 > - `StarRail_Data\Persistent\Audio\AudioPackage\Windows\... `
 > - `ZenlessZoneZero_Data\StreamingAssets\Audio\Windows\Full\...`
+
 > [!WARNING]
 > If you are doing this on Endfield, the path will start with
+> 
 > `Endfield_Data\StreamingAssets\VFS\...`
+> 
 > Then the next folder will depend on what you want to load :
-> `InitAudio` <=> `07A1BB91`
-> `Audio` <=> `24ED34CF`
-> `AudioEnglish` <=> `A31457D0`
-> `AudioChinese` <=> `E1E7D7CE`
-> `AudioKorean` <=> `E9D31017`
-> `AudioJapanese` <=> `F668D4EE`
+> - `InitAudio` <=> `07A1BB91`
+> - `Audio` <=> `24ED34CF`
+> - `AudioEnglish` <=> `A31457D0`
+> - `AudioChinese` <=> `E1E7D7CE`
+> - `AudioKorean` <=> `E9D31017`
+> - `AudioJapanese` <=> `F668D4EE`
+>   
 > Then inside the folder, the audio is in the `.chk` files. Do not load any other file or any chk file from others folders and do not load entire folders too !
+>
 > Because of how audio is stored, when you load endfield audio the file will not show the duration and other metadata, but they remain extractable
 5. Select your hdiff folder if needed
 > [!NOTE]
