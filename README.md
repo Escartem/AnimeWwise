@@ -40,6 +40,7 @@ An easy to use tool to extract audio from some anime games, with the original fi
 > - `AudioChinese` <=> `E1E7D7CE`
 > - `AudioKorean` <=> `E9D31017`
 > - `AudioJapanese` <=> `F668D4EE`
+> - `AuditAudio` <=> `1EBAF5C6`
 >   
 > Then inside the folder, the audio is in the `.chk` files. Do not load any other file or any chk file from others folders and do not load entire folders too !
 >
