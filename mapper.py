@@ -19,8 +19,8 @@ class Mapper:
 		reader.ReadBytes(2)
 
 		map_version = reader.ReadBytes(2)
-		if map_version != b"\x33\x30":
-			print(f"Warning: you are using an unknown / unsupported version of the mapping that is no longer supported, please use a newer one or download an older version of this tool.")
+		if map_version != b"\x33\x31":
+			print(f"Error: you are using an unknown / unsupported version of the mapping that is no longer supported, please use a newer one or download an older version of this tool.")
 			raise Exception("incompatible mapping")
 
 		reader.ReadBytes(2)
@@ -67,7 +67,7 @@ class Mapper:
 		n_langs = reader.ReadInt8()
 		for i in range(n_langs):
 			size = reader.ReadInt8()
-			name = reader.ReadBytes(size).decode("utf-8")
+			name = bytes([b ^ (0x97 + size) for b in reader.ReadBytes(size)]).decode("utf-8")
 			self.languages.append(name)
 
 		# alloc sectors
@@ -100,7 +100,7 @@ class Mapper:
 			for i in range(n_music):
 				key = int.from_bytes(reader.ReadBytes(4), "big")
 				name_size = reader.ReadInt8()
-				name = reader.ReadBytes(name_size).decode("utf-8")
+				name = bytes([b ^ (0x97 + name_size) for b in reader.ReadBytes(name_size)]).decode("utf-8")
 				self.music_keys[str(key)] = f"{root}\\{name}"
 
 		# done
@@ -135,7 +135,7 @@ class Mapper:
 				if string_size > 128:
 					string = str(int.from_bytes(self.strings[string_offset+1:string_offset+1+(string_size-128)], "big"))
 				else:
-					string = self.strings[string_offset+1:string_offset+1+string_size].decode("utf-8")
+					string = bytes([b ^ (0x97 + string_size) for b in self.strings[string_offset+1:string_offset+1+string_size]]).decode("utf-8")
 				word.append(string)
 
 			word = "_".join(word)
