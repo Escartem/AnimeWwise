@@ -6,11 +6,11 @@ An easy to use tool to extract audio from some anime games, with the original fi
 
 ### Important ! A map is only here to recover names, not make extraction possible, you can use old maps or no map at all and still get all the audio from the game. Maps being outdated only mean you will not have the latest names automatically found, you can still load and extract audio !
 
-### ⚠️ Only Genshin, Star Rail and Zenless supported !
+### ⚠️ Only Genshin, Star Rail, Zenless and Endfield supported !
 
 ### ⚠️ Genshin will not be updated at every version, and current version of music names is 5.3 for now
 
-### ⚠️ ZZZ changed how audio is stored, no updates beyond 2.2 planned for now
+### ⚠️ ZZZ changed how audio is stored, the game will still be updated but will be incomplete
 
 
 # Usage
@@ -77,6 +77,7 @@ Feel free to contribute to this project as much as you want, a share would be ve
 
 - [@Razmoth](https://github.com/Razmoth) - help on figuring out keys parsing to recover names for genshin and zzz
 - [@Dimbreath](https://github.com/Dimbreath) - AnimeGameData, TurnBasedGameData and ZZZData
+- [@Eleiyas](https://github.com/Eleiyas) - help on keeping games updated with the latest names
 - [@Kei-Luna](https://github.com/Kei-Luna) - instructions on recovering names for genshin music
 - [@davispuh](https://github.com/davispuh) - star rail keys bruteforce tool
 - [@bnnm](https://github.com/bnnm) - wwise audio exploration tool
