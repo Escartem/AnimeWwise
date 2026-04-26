@@ -49,20 +49,17 @@ class Mapper:
 
 		# sectors
 		def int24():
-			val = int.from_bytes(reader.ReadBytes(3), "big")
-			if val == 0:
-				int.from_bytes(reader.ReadBytes(4), "big")
-			return val
+			val = reader.ReadBytes(3)
+			if val == b"\xFF" * 3:
+				val = reader.ReadBytes(4)
+			return int.from_bytes(val, "big")
 
-		sectors = {
-			# offset | size
-			"languages": [int24(), int24()],
-			"strings": [int24(), int24()],
-			"words": [int24(), int24()],
-			"files": [int24(), int24()],
-			"keys": [int24(), int24()],
-			"music": [int24(), int24()]
-		}
+		names = ["languages", "strings", "words", "files", "keys", "music"]
+		sectors = {n: [int24(), int24()] for n in names}
+		if list(sectors.values())[0][0] == 0:
+			offset = reader.GetBufferPos()
+			for v in sectors.values():
+				v[0] += offset
 
 		# languages
 		reader.SetBufferPos(sectors["languages"][0])
