@@ -276,7 +276,7 @@ class WwiseExtract:
 		# wav
 		new_input = output_folder
 		if retain_structure:
-			files = [path(os.path.dirname(file["source"]), "/".join(file["path"]), file["name"]) for file in files]
+			files = [path(file["source"], "/".join(file["path"]), file["name"]) for file in files]
 		else:
 			files = [path("/".join(file["path"]), file["name"]) for file in files]
 
@@ -343,8 +343,7 @@ class WwiseExtract:
 							
 				filepath = path("/".join(file["path"]), file["name"])
 				if retain_structure:
-					source_dir = os.path.dirname(file["source"])
-					filepath = path(source_dir, filepath)
+					filepath = path(file["source"], filepath)
 				fullpath = path(output, filepath)
 				os.makedirs(os.path.dirname(fullpath), exist_ok=True)
 				
