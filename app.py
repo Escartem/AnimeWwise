@@ -501,6 +501,9 @@ class AnimeWwise(QMainWindow):
 	def extractItems(self, _all):
 		self.setFolder(folder="output")
 
+		if not self.folders["output"]:
+			return
+
 		# meta
 		self.meta_index = {}
 		stack = [self.fileStructure]
