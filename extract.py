@@ -251,7 +251,7 @@ class WwiseExtract:
 
 	### extracting files ###
 
-	def extract_files(self, _input, files, output, _format, progress):
+	def extract_files(self, _input, files, output, _format, retain_structure=False, progress=None):
 		temp_dir = tempfile.TemporaryDirectory()
 		self.progress = progress
 		self.steps = {
@@ -267,7 +267,7 @@ class WwiseExtract:
 		else:
 			output_folder = path(temp_dir.name, "wem")
 
-		self.extract_wem(_input, files, output_folder)
+		self.extract_wem(_input, files, output_folder, retain_structure)
 
 		if _format == "wem":
 			temp_dir.cleanup()
@@ -275,7 +275,10 @@ class WwiseExtract:
 
 		# wav
 		new_input = output_folder
-		files = [path("/".join(file["path"]), file["name"]) for file in files]
+		if retain_structure:
+			files = [path(os.path.dirname(file["source"]), "/".join(file["path"]), file["name"]) for file in files]
+		else:
+			files = [path("/".join(file["path"]), file["name"]) for file in files]
 
 		if _format == "wav":
 			output_folder = output
@@ -298,7 +301,7 @@ class WwiseExtract:
 		temp_dir.cleanup()
 		return
 
-	def extract_wem(self, _input, files, output):
+	def extract_wem(self, _input, files, output, retain_structure=False):
 		print(": Extracting audio as wem")
 		all_sources = list(set([e["source"] for e in files]))
 
@@ -339,6 +342,9 @@ class WwiseExtract:
 						continue
 							
 				filepath = path("/".join(file["path"]), file["name"])
+				if retain_structure:
+					source_dir = os.path.dirname(file["source"])
+					filepath = path(source_dir, filepath)
 				fullpath = path(output, filepath)
 				os.makedirs(os.path.dirname(fullpath), exist_ok=True)
 				
