@@ -53,6 +53,7 @@ class BackgroundWorker(QObject):
 			self.files = data["files"]
 			self.format = data["format"]
 			self.output = data["output"]
+			self.retain_structure = data.get("retain_structure", False)
 
 	def run(self):
 		if self.action == "load":
@@ -69,7 +70,7 @@ class BackgroundWorker(QObject):
 				self.finished.emit({"action": "error", "content": {"msg": "Nothing selected !", "state": 2}})
 				return
 			print(f"Extracting {len(self.files)} files...")
-			self.extract.extract_files(self.input, self.files, self.output, self.format, progress=self.progress.emit)
+			self.extract.extract_files(self.input, self.files, self.output, self.format, self.retain_structure, progress=self.progress.emit)
 			self.finished.emit({"action": "extract"})
 
 class UpdaterWorker(QObject):
@@ -531,7 +532,7 @@ class AnimeWwise(QMainWindow):
 
 		# yet another block of threading bs
 		self.backgroundThread = QThread()
-		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.currentInput, "files": checked_items, "format": self.format, "output": self.folders["output"]})
+		self.backgroundWorker = BackgroundWorker("extract", self.extract, {"input": self.currentInput, "files": checked_items, "format": self.format, "output": self.folders["output"], "retain_structure": self.actionRetain_folder_structure.isChecked()})
 		self.backgroundWorker.moveToThread(self.backgroundThread)
 		self.backgroundThread.started.connect(self.backgroundWorker.run)
 		self.backgroundWorker.finished.connect(self.handleFinished)

@@ -472,6 +472,8 @@ Subfolders are disabled in this mode, make sure to be in the correct place. For 
     </widget>
     <addaction name="menuOutput_format"/>
     <addaction name="separator"/>
+    <addaction name="actionRetain_folder_structure"/>
+    <addaction name="separator"/>
     <addaction name="actionExtract_All"/>
     <addaction name="actionExtract_Selected"/>
    </widget>
@@ -560,6 +562,17 @@ Subfolders are disabled in this mode, make sure to be in the correct place. For 
    </property>
    <property name="visible">
     <bool>false</bool>
+   </property>
+  </action>
+  <action name="actionRetain_folder_structure">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Retain folder structure</string>
    </property>
   </action>
   <action name="actionExpand_all">
