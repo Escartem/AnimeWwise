@@ -78,8 +78,8 @@ class Mapper:
 
 		reader.ReadBytes(2)
 
-		map_version = reader.ReadBytes(2)
-		if map_version != b"\x33\x31":
+		self.map_version = reader.ReadBytes(2)
+		if self.map_version not in [b"\x33\x31", b"\x33\x32"]:
 			print(f"Error: you are using an unknown / unsupported version of the mapping that is no longer supported, please use a newer one or download an older version of this tool.")
 			raise Exception("incompatible mapping")
 
@@ -143,7 +143,10 @@ class Mapper:
 		n_files = n_keys // n_langs
 
 		keys_data = bytearray(reader.ReadBytes(sectors["keys"][1]-1))
-		self.keys = {keys_data[i+3:i+key_size].hex(): int.from_bytes(keys_data[i:i+3], "big") for i in range(0, len(keys_data), key_size)}
+		if self.map_version == b"\x33\x31":
+			self.keys = {keys_data[i+3:i+key_size].hex(): int.from_bytes(keys_data[i:i+3], "big") for i in range(0, len(keys_data), key_size)}
+		else:
+			self.keys = {keys_data[i+4:i+key_size].hex(): (int.from_bytes(keys_data[i:i+3], "big"), keys_data[i+3]) for i in range(0, len(keys_data), key_size)}
 
 		# music
 		self.music_keys = {}
@@ -178,7 +181,10 @@ class Mapper:
 			if key in self.music_keys:
 				return [self.music_keys[key], ""]
 
-			lang, offset = (self.keys[key] >> 22) & 0x03, self.keys[key] & 0x3FFFFF
+			if self.map_version == b"\x33\x31":
+				lang, offset = (self.keys[key] >> 22) & 0x03, self.keys[key] & 0x3FFFFF
+			else:
+				offset, lang = self.keys[key]
 
 			parts = int.from_bytes(self.files[offset:offset+1], "big")
 			name = []
