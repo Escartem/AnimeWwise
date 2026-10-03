@@ -1,16 +1,16 @@
 {
     "version": 223,
-    "mapsVersion": 147,
+    "mapsVersion": 149,
     "maps": [
         {
             "name": "hk4e.map",
             "game": "Genshin Impact",
-            "version": "7.0"
+            "version": "7.1"
         },
         {
             "name": "hkrpg.map",
             "game": "Honkai: Star Rail",
-            "version": "4.5"
+            "version": "4.6"
         },
         {
             "name": "nap.map",
