@@ -73,6 +73,8 @@ The program has been tested and proved to be very efficient with extraction (not
 
 Feel free to contribute to this project as much as you want, a share would be very appreciated aswell, I'll be glad to know if this helped anyone <3
 
+Mapping files can be generated with [WwiseMapper](https://github.com/Escartem/WwiseMapper). See its README for instructions on building maps and contributing mapping data.
+
 # Credits
 
 - [@Razmoth](https://github.com/Razmoth) - help on figuring out keys parsing to recover names for genshin and zzz
