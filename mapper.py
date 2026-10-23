@@ -139,6 +139,10 @@ class Mapper:
 		# read keys
 		reader.SetBufferPos(sectors["keys"][0])
 		key_size = reader.ReadInt8()
+		# Some maps label the newer 3-byte offset + language + 64-bit hash
+		# records as version 31. Legacy 64-bit records are only 11 bytes.
+		if self.map_version == b"\x33\x31" and key_size == 12:
+			self.map_version = b"\x33\x32"
 		n_keys = (sectors["keys"][1]-1) // key_size
 		n_files = n_keys // n_langs
 
