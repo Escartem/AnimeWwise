@@ -26,6 +26,8 @@ class HsrMapMergeTests(unittest.TestCase):
                          ['voice\\chapter5\\73\\player\\chapter5_73_player_132_f', 'Chinese(PRC)'])
         self.assertEqual(mapping.get_key('bcb0285fdfccd548', True),
                          ['voice\\chapter5\\75\\pangbai\\chapter5_75_pangbai_107', 'Chinese(PRC)'])
+        self.assertEqual(mapping.get_bank_keys('807260683', 'Chinese(PRC)/VoBanks6.pck', 41793),
+                         ['voice\\battle\\asta\\Ev_vo_avatar_skill_cast_asta_807260683'])
 
     def test_merge_retains_old_keys_and_decimal_names_in_two_languages(self):
         before = load(ROOT / 'maps/hkrpg.map')

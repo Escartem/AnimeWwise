@@ -101,7 +101,7 @@ def merge_map(before, additions, version):
     header = bytearray(prefix); offset = 0
     for chunk in chunks:
         header.extend(i24(offset) + i24(len(chunk))); offset += len(chunk)
-    return bytes(header) + b''.join(chunks)
+    return bytes(header) + b''.join(chunks) + before.data[before.map_end:]
 
 
 def scan(game):

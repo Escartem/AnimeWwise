@@ -118,7 +118,7 @@ def parse_bank(entry, cache, parser_class):
 
 def collect_events(directory):
     names = defaultdict(set)
-    for path in sorted(directory.rglob('*.json')):
+    for path in ([directory] if directory.is_file() else sorted(directory.rglob('*.json'))):
         def walk(obj):
             if isinstance(obj, dict):
                 name = obj.get('SoundName', '')
