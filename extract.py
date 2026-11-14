@@ -83,9 +83,9 @@ class WwiseExtract:
 			data = f.read()
 			f.close()
 
-		self.get_wems(data, os.path.basename(_input), hdiff, os.path.relpath(_input, start=base_path))
+		self.get_wems(data, os.path.basename(_input), hdiff, os.path.relpath(_input, start=base_path), _input)
 
-	def get_wems(self, data, filename, hdiff, relpath):
+	def get_wems(self, data, filename, hdiff, relpath, source_path=None):
 		files = wavescan.get_data(data, filename)
 		
 		if hdiff is not None:
@@ -96,7 +96,7 @@ class WwiseExtract:
 			hdiff_files, data = self.get_hdiff_files(data, hdiff_data, filename)
 			files = self.compare_diff(files, hdiff_files)
 
-		self.map_names(files, filename, relpath, hdiff is not None, data)
+		self.map_names(files, filename, relpath, hdiff is not None, data, source_path=source_path)
 
 	def compare_diff(self, old, new):
 		old_dict = {file[0]:file[2] for file in old}
@@ -149,7 +149,7 @@ class WwiseExtract:
 
 		return files, data
 	
-	def map_names(self, files, filename, relpath, hdiff=False, data=None, skip_source=True):
+	def map_names(self, files, filename, relpath, hdiff=False, data=None, skip_source=True, source_path=None):
 		# disable skip source if required
 		mapper = self.mapper
 		base = self.file_structure
@@ -177,6 +177,7 @@ class WwiseExtract:
 				# 	key = [banks["banks"][_id], ""]
 			else:
 				key = None
+			bank_names = mapper.get_bank_keys(file[0].rsplit('.', 1)[0], source_path or relpath, file[2]) if mapper and key is None else []
 
 			file_data = {
 				"source": relpath,
@@ -194,18 +195,11 @@ class WwiseExtract:
 
 			file_data["metadata"] = parsed_wem
 
-			if key is not None:
-				if hdiff:
-					if file in old_files[0]:
-						key[0] = f"new_files\\{key[0]}"
-					else:
-						key[0] = f"changed_files\\{key[0]}"
-
-				parts = f"{filename}\\{key[0]}.wem".split("\\")
-				if skip_source:
-					parts = parts[1:]
-
-				self.add_to_structure(parts, file_data)
+			if key is not None or bank_names:
+				mapped_names = [key[0]] if key is not None else bank_names
+				for mapped_name in mapped_names:
+					self.add_mapped_file(mapped_name, file_data, filename, skip_source, hdiff,
+						file in old_files[0] if hdiff else False)
 			else:
 				temp = base["folders"]
 
@@ -236,6 +230,12 @@ class WwiseExtract:
 			self.update_progress(pos, len(files), 1)
 
 		self.file_structure = base
+
+	def add_mapped_file(self, name, meta, filename, skip_source, hdiff, is_new):
+		if hdiff:
+			name = ('new_files\\' if is_new else 'changed_files\\') + name
+		parts = f"{filename}\\{name}.wem".split('\\')
+		self.add_to_structure(parts[1:] if skip_source else parts, meta)
 
 	def add_to_structure(self, parts, meta):
 		current_level = self.file_structure

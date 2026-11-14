@@ -1,6 +1,7 @@
 # reader for the .map format i've made to improve reading speed and mapping size
 import io
 import json
+import struct
 from filereader import FileReader
 
 
@@ -13,6 +14,7 @@ class Mapper:
 		self.words = bytearray()
 		self.files = bytearray()
 		self.music_keys = {}
+		self.bank_keys = {}
 
 		### NORMAL MAP LOADING ###
 
@@ -117,6 +119,7 @@ class Mapper:
 			offset = reader.GetBufferPos()
 			for v in sectors.values():
 				v[0] += offset
+		self.map_end = max(offset + size for offset, size in sectors.values())
 
 		# languages
 		reader.SetBufferPos(sectors["languages"][0])
@@ -168,6 +171,20 @@ class Mapper:
 				name = bytes([b ^ (0x97 + name_size) for b in reader.ReadBytes(name_size)]).decode("utf-8")
 				self.music_keys[str(key)] = f"{root}\\{name}"
 
+		# Optional bank-media names follow the legacy sectors. Older readers
+		# continue to read the original map without interpreting this extension.
+		self.bank_keys = {}
+		trailer = self.data[self.map_end:]
+		if trailer.startswith(b"ESFB"):
+			if len(trailer) < 8:
+				raise ValueError("Truncated bank mapping header")
+			length = struct.unpack_from('<I', trailer, 4)[0]
+			if len(trailer) != 8 + length:
+				raise ValueError("Invalid bank mapping length")
+			for language, package, ident, size, paths in json.loads(trailer[8:]):
+				key = (package.casefold(), ident, size)
+				self.bank_keys.setdefault(key, {})[language.casefold()] = paths
+
 		# done
 		print(f"> Finished loading mapping")
 		print(f"=-=-= Voicelines sector =-=-=")
@@ -176,6 +193,17 @@ class Mapper:
 		print(f": {n_keys} keys")
 		if hasMusic:
 			print(f": {n_music} musics")
+
+	def get_bank_keys(self, ident, source, size):
+		"""Name only verified complete bank media in the selected language/package."""
+		parts = str(source).replace('\\', '/').casefold().split('/')
+		candidates = self.bank_keys.get((parts[-1], ident, size), {})
+		for language in self.languages:
+			if language.casefold() in parts[:-1]:
+				return list(candidates.get(language.casefold(), []))
+		# A copied PCK may have no language folder. Name it only when the
+		# package/media/size combination identifies a single mapped language.
+		return list(next(iter(candidates.values()))) if len(candidates) == 1 else []
 
 	def get_key(self, key, addLang=False):
 		if self.mode == "MAP":
@@ -229,3 +257,4 @@ class Mapper:
 		self.words = bytearray()
 		self.files = bytearray()
 		self.music_keys = {}
+		self.bank_keys = {}
