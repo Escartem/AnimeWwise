@@ -26,6 +26,10 @@ class HsrMapMergeTests(unittest.TestCase):
                          ['voice\\chapter5\\73\\player\\chapter5_73_player_132_f', 'Chinese(PRC)'])
         self.assertEqual(mapping.get_key('bcb0285fdfccd548', True),
                          ['voice\\chapter5\\75\\pangbai\\chapter5_75_pangbai_107', 'Chinese(PRC)'])
+        self.assertEqual(mapping.get_key('0004d68339ba82e3', True),
+                         ['voice\\chapter5\\74\\guanggaopai\\chapter5_74_guanggaopai_105', 'English'])
+        self.assertEqual(mapping.get_key('00c3018145893fd9', True),
+                         ['voice\\chapter5\\705\\player\\chapter5_705_player_119_m', 'English'])
         self.assertEqual(mapping.get_bank_keys('807260683', 'Chinese(PRC)/VoBanks6.pck', 41793),
                          ['voice\\battle\\asta\\Ev_vo_avatar_skill_cast_asta_807260683'])
 

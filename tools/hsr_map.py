@@ -1,4 +1,4 @@
-"""Build a package-verified HSR map with WwiseMapper, retaining existing records.
+"""Build an HSR map from all WwiseMapper database paths, retaining existing records.
 
 Run from the repository root; use --help for options. Game files are read only.
 """
@@ -135,7 +135,7 @@ def scan(game):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--game', type=Path, required=True)
+    ap.add_argument('--game', type=Path, help='Optional installed game for media verification; never filters names')
     ap.add_argument('--wwisemap', type=Path, required=True)
     ap.add_argument('--data', type=Path, required=True, help='WwiseMapper seed data directory (copied)')
     ap.add_argument('--commit', required=True, help='pinned DimbreathBot/TurnBasedGameData commit')
@@ -145,7 +145,7 @@ def main():
     ap.add_argument('--output', type=Path, default=ROOT/'maps/hkrpg.map')
     ap.add_argument('--direct-network', action='store_true')
     ap.add_argument('--extract-samples', action='store_true')
-    ap.add_argument('--extra-paths', type=Path, help='Additional candidate paths for WwiseMapper append; still verified against installed packages')
+    ap.add_argument('--extra-paths', type=Path, help='Additional paths for WwiseMapper append')
     args = ap.parse_args()
     if not re.fullmatch(r'[0-9]\.[0-9]', args.version):
         ap.error('ESFM version header requires a single-digit X.Y version')
@@ -184,17 +184,18 @@ def main():
         run('append', '-g', 'hkrpg', '-v', args.version, '-d', 'v1', '--data', data, '-p', args.extra_paths.resolve())
     run('build', '-g', 'hkrpg', '-v', args.version, '--data', data, '-o', built)
     before, candidate = load(args.baseline), load(built)
-    print('Scanning installed package indexes', flush=True)
-    locations, packages = scan(args.game)
+    if args.extract_samples and not args.game:
+        ap.error('--extract-samples requires --game')
+    locations, packages = scan(args.game) if args.game else ({}, [])
     additions, evidence, absent = {}, {}, 0
     for key in candidate.keys.keys()-before.keys.keys():
         if key not in locations:
-            absent += 1; continue
+            absent += 1
         path, language = candidate.get_key(key, True)
         basename = path.rsplit('\\', 1)[-1]
         hashed = f'{language}/voice/{basename}.wem' if language != 'SFX' else f'sfx/{basename}.wem'
         assert fnv(hashed) == key, (key, hashed)
-        for loc in locations[key]:
+        for loc in locations.get(key, []):
             package = Path(loc['package'])
             if language != 'SFX':
                 assert package.parent.name == language, (key, language, package)
@@ -204,7 +205,7 @@ def main():
             endian = '<' if head[:4] == b'RIFF' else '>'
             assert struct.unpack(endian+'I', head[4:8])[0]+8 == loc['size']
         additions[key] = (path, language)
-        evidence[key] = {'path': path, 'language': language, 'hash_input': hashed.lower(), 'locations': locations[key]}
+        evidence[key] = {'path': path, 'language': language, 'hash_input': hashed.lower(), 'locations': locations.get(key, [])}
     result = merge_map(before, additions, args.version)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(result)
@@ -217,7 +218,7 @@ def main():
     if args.extract_samples:
         out = ROOT/'output'/f'hsr-{args.version}'/'samples'
         for language in sorted({e['language'] for e in evidence.values()}):
-            options = [(key, e) for key, e in sorted(evidence.items()) if e['language'] == language]
+            options = [(key, e) for key, e in sorted(evidence.items()) if e['language'] == language and e['locations']]
             options.sort(key=lambda item: ('v470' not in item[1]['path'], item[0]))
             for key, e in options[:2]:
                 loc = e['locations'][0]
@@ -234,9 +235,9 @@ def main():
               'wwisemap_exe': str(args.wwisemap.resolve()), 'wwisemap_sha256': hashlib.sha256(args.wwisemap.read_bytes()).hexdigest(),
               'seed_db_sha256': hashlib.sha256(seed.read_bytes()).hexdigest(),
               'baseline_sha256': hashlib.sha256(before.data).hexdigest(), 'baseline_keys': len(before.keys),
-              'candidate_keys': len(candidate.keys), 'new_verified_keys': len(additions), 'new_languages': dict(Counter(e['language'] for e in evidence.values())),
-              'uninstalled_candidate_keys_excluded': absent, 'final_keys': len(after.keys),
-              'packages_scanned': len(packages), 'external_identifiers': len(locations),
+              'candidate_keys': len(candidate.keys), 'new_keys': len(additions), 'new_package_verified_keys': len(additions)-absent, 'new_languages': dict(Counter(e['language'] for e in evidence.values())),
+              'new_keys_without_installed_media': absent, 'final_keys': len(after.keys),
+              'package_verification_requested': args.game is not None, 'packages_scanned': len(packages), 'external_identifiers': len(locations),
               'coverage_before': len(locations.keys() & before.keys.keys()), 'coverage_after': len(locations.keys() & after.keys.keys()),
               'unresolved_external_identifiers': len(locations.keys()-after.keys.keys()),
               'baseline_records_unchanged': True, 'all_additions_roundtrip_verified': True,
